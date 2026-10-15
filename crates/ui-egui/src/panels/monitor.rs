@@ -396,7 +396,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
         "stepFrames" => Icon::StepFwd,
         "stepKeyframes" => Icon::Keyframe,
         "scroll" => Icon::Hand,
-        _ => Icon::Sliders,
+        _ => Icon::Adjust,
     };
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
