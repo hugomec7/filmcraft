@@ -2547,6 +2547,10 @@
 	Time and Pitch	Tempo e tom
 	Timecode Conversion	Conversão de timecode
 	Timeline Mouse Scrolling	Rolagem com o mouse na linha do tempo
+	Scroll to zoom on timeline	Rolar mouse para aplicar zoom na linha do tempo
+	Zoom anchor point	Ponto de ancoragem do zoom
+	Cursor position	Posição do cursor
+	Playhead position	Posição da agulha (Playhead)
 	Timeline Playback Auto-Scrolling	Rolagem automática da linha do tempo durante a reprodução
 	Tint Color	Cor da tonalidade
 	To	Até

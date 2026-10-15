@@ -697,6 +697,17 @@ impl Default for MemoryPrefs {
     }
 }
 
+/// Where the Timeline's wheel zoom keeps its pivot (Settings ▸ Timeline ▸ Zoom anchor point).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum ZoomAnchor {
+    /// The time under the pointer stays under it.
+    #[default]
+    Cursor,
+    /// The playhead stays where it is on screen (the pointer is used while the playhead is out of view).
+    Playhead,
+}
+
 /// Settings ▸ Timeline.
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", default)]
@@ -712,6 +723,12 @@ pub struct TimelinePrefs {
     pub auto_scroll: String,
     /// "Timeline Mouse Scrolling": `vertical` | `horizontal`.
     pub mouse_scrolling: String,
+    /// "Scroll to zoom on timeline": the bare wheel over the tracks zooms; Alt or Shift + wheel
+    /// scrolls sideways (and Cmd / Ctrl + wheel moves the tracks up and down). Off: the classic wheel
+    /// (see `mouse_scrolling`) and Alt + wheel to zoom.
+    pub scroll_to_zoom: bool,
+    /// "Zoom anchor point": the pivot of a wheel or pinch zoom.
+    pub zoom_anchor: ZoomAnchor,
     /// Default Audio Tracks per media type: `useFile` | `mono` | `stereo` | `5.1` | `adaptive`.
     pub mono_media_tracks: String,
     pub stereo_media_tracks: String,
@@ -741,6 +758,8 @@ impl Default for TimelinePrefs {
             still_image_unit: "seconds".into(),
             auto_scroll: "pageScroll".into(),
             mouse_scrolling: "vertical".into(),
+            scroll_to_zoom: false,
+            zoom_anchor: ZoomAnchor::Cursor,
             mono_media_tracks: "useFile".into(),
             stereo_media_tracks: "useFile".into(),
             surround_media_tracks: "useFile".into(),
@@ -973,6 +992,7 @@ const CACHE_MGMT: &[(&str, &str)] = &[
 ];
 const AUTO_SCROLL: &[(&str, &str)] = &[("noScroll", "No Scroll"), ("pageScroll", "Page Scroll"), ("smoothScroll", "Smooth Scroll")];
 const MOUSE_SCROLL: &[(&str, &str)] = &[("vertical", "Vertical"), ("horizontal", "Horizontal")];
+const ZOOM_ANCHOR: &[(&str, &str)] = &[("cursor", "Cursor position"), ("playhead", "Playhead position")];
 const HW_DECODE: &[(&str, &str)] = &[("auto", "Auto"), ("off", "Off")];
 const TRACKS: &[(&str, &str)] = &[("useFile", "Use File"), ("mono", "Mono"), ("stereo", "Stereo"), ("5.1", "5.1"), ("adaptive", "Adaptive")];
 pub const DURATION_UNITS: &[(&str, &str)] = &[("frames", "Frames"), ("seconds", "Seconds")];
@@ -1324,6 +1344,8 @@ static CATEGORIES: &[Category] = &[
             f("timeline.stillImageDuration", "Still Image Default Duration", Kind::Duration { unit_key: "timeline.stillImageUnit" }, true),
             f("timeline.autoScroll", "Timeline Playback Auto-Scrolling", Kind::Choice(AUTO_SCROLL), true),
             f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
+            b("timeline.scrollToZoom", "Scroll to zoom on timeline", true),
+            f("timeline.zoomAnchor", "Zoom anchor point", Kind::Choice(ZOOM_ANCHOR), true),
             Row::Group(
                 "Default Audio Tracks",
                 &[

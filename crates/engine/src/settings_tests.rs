@@ -625,6 +625,112 @@ fn drop_import_to_timeline_is_in_the_settings_registry() {
     assert_eq!(settings::field("timeline.dropImportToTimeline").map(|f| f.key), Some("timeline.dropImportToTimeline"));
 }
 
+/// Settings ▸ Timeline ▸ "Scroll to zoom on timeline" is off and "Zoom anchor point" is the cursor
+/// until the user changes them: the wheel is the classic one.
+#[test]
+fn scroll_to_zoom_defaults_to_the_classic_wheel_anchored_at_the_cursor() {
+    let p = settings::TimelinePrefs::default();
+    assert!(!p.scroll_to_zoom);
+    assert_eq!(p.zoom_anchor, settings::ZoomAnchor::Cursor);
+    assert_eq!(settings::ZoomAnchor::default(), settings::ZoomAnchor::Cursor);
+    let all = Preferences::default().timeline;
+    assert!(!all.scroll_to_zoom);
+    assert_eq!(all.zoom_anchor, settings::ZoomAnchor::Cursor);
+}
+
+/// The keys are written as `scrollToZoom` (a Boolean) and `zoomAnchor` (`cursor` | `playhead`), and read back.
+#[test]
+fn scroll_to_zoom_and_zoom_anchor_serialize_under_their_keys() {
+    let prefs = settings::TimelinePrefs { scroll_to_zoom: true, zoom_anchor: settings::ZoomAnchor::Playhead, ..Default::default() };
+    let v = serde_json::to_value(&prefs).unwrap();
+    assert_eq!(v["scrollToZoom"], json!(true));
+    assert_eq!(v["zoomAnchor"], json!("playhead"));
+    assert_eq!(serde_json::from_value::<settings::TimelinePrefs>(v).unwrap(), prefs);
+    let d = serde_json::to_value(settings::TimelinePrefs::default()).unwrap();
+    assert_eq!(d["scrollToZoom"], json!(false));
+    assert_eq!(d["zoomAnchor"], json!("cursor"));
+    for (text, anchor) in [("cursor", settings::ZoomAnchor::Cursor), ("playhead", settings::ZoomAnchor::Playhead)] {
+        let p: settings::TimelinePrefs = serde_json::from_value(json!({ "zoomAnchor": text })).unwrap();
+        assert_eq!(p.zoom_anchor, anchor);
+    }
+}
+
+/// Both keys are saved to the preferences file, read back by `prefs.get`, and hostile values are
+/// refused without touching what is stored.
+#[test]
+fn scroll_to_zoom_and_zoom_anchor_round_trip_through_prefs() {
+    use settings::ZoomAnchor;
+    let dir = tmp_dir("scroll-to-zoom");
+    let path = dir.join("preferences.json");
+    let mut s = Session { prefs_path: Some(path.clone()), ..Session::default() };
+    set(&mut s, "timeline.scrollToZoom", json!(true));
+    set(&mut s, "timeline.zoomAnchor", json!("playhead"));
+    assert!(s.prefs.timeline.scroll_to_zoom);
+    assert_eq!(s.prefs.timeline.zoom_anchor, ZoomAnchor::Playhead);
+    assert_eq!(s.execute("prefs.get", json!({"key": "timeline.scrollToZoom"})).unwrap(), json!(true));
+    assert_eq!(s.execute("prefs.get", json!({"key": "timeline.zoomAnchor"})).unwrap(), json!("playhead"));
+    let loaded = Preferences::load(&path);
+    assert!(loaded.timeline.scroll_to_zoom);
+    assert_eq!(loaded.timeline.zoom_anchor, ZoomAnchor::Playhead);
+    // an anchor that is not one of the two is refused, and the stored one is kept
+    for value in [json!("middle"), json!(""), json!("Cursor"), json!(null), json!(3), json!(true), json!({}), json!("x".repeat(4096))] {
+        assert!(s.execute("prefs.set", json!({"key": "timeline.zoomAnchor", "value": value})).is_err(), "{value}");
+        assert_eq!(s.prefs.timeline.zoom_anchor, ZoomAnchor::Playhead);
+    }
+    // so is a non-boolean for the switch
+    assert!(s.execute("prefs.set", json!({"key": "timeline.scrollToZoom", "value": "yes"})).is_err());
+    assert!(s.prefs.timeline.scroll_to_zoom);
+    // and both go back to what they were
+    set(&mut s, "timeline.scrollToZoom", json!(false));
+    set(&mut s, "timeline.zoomAnchor", json!("cursor"));
+    let loaded = Preferences::load(&path);
+    assert!(!loaded.timeline.scroll_to_zoom);
+    assert_eq!(loaded.timeline.zoom_anchor, ZoomAnchor::Cursor);
+    std::fs::remove_dir_all(dir).unwrap();
+}
+
+/// Files from before the keys existed load the classic wheel; a damaged anchor goes back to the
+/// cursor and costs nothing else in the file; resetting the category restores both.
+#[test]
+fn scroll_to_zoom_keys_default_for_older_and_damaged_prefs() {
+    use settings::ZoomAnchor;
+    let old = Preferences::from_value(json!({"version": 2, "timeline": {"stillImageDuration": 3}}));
+    assert!(!old.timeline.scroll_to_zoom);
+    assert_eq!(old.timeline.zoom_anchor, ZoomAnchor::Cursor);
+    assert_eq!(old.timeline.still_image_duration, 3.0);
+    for bad in [json!("middle"), json!(7), json!(null), json!([]), json!({"a": 1}), json!(false), json!("PLAYHEAD")] {
+        let p = Preferences::from_value(json!({"version": 2, "timeline": {"scrollToZoom": true, "zoomAnchor": bad, "stillImageDuration": 3}}));
+        assert_eq!(p.timeline.zoom_anchor, ZoomAnchor::Cursor, "{bad}");
+        assert!(p.timeline.scroll_to_zoom, "{bad}");
+        assert_eq!(p.timeline.still_image_duration, 3.0, "{bad}");
+    }
+    let mut p = Preferences::default();
+    p.timeline.scroll_to_zoom = true;
+    p.timeline.zoom_anchor = ZoomAnchor::Playhead;
+    p.reset_category("timeline").unwrap();
+    assert_eq!(p.timeline, settings::TimelinePrefs::default());
+}
+
+/// Both are fields of the Timeline category: a Boolean and a choice of the two anchors.
+#[test]
+fn scroll_to_zoom_and_zoom_anchor_are_in_the_settings_registry() {
+    use settings::ZoomAnchor;
+    let (cat, f) = settings::fields().into_iter().find(|(_, f)| f.key == "timeline.scrollToZoom").expect("registry field");
+    assert_eq!(cat, "timeline");
+    assert!(f.wired && matches!(f.kind, Kind::Bool));
+    assert_eq!(f.label, "Scroll to zoom on timeline");
+    let (cat, f) = settings::fields().into_iter().find(|(_, f)| f.key == "timeline.zoomAnchor").expect("registry field");
+    assert_eq!(cat, "timeline");
+    assert!(f.wired);
+    assert_eq!(f.label, "Zoom anchor point");
+    let Kind::Choice(opts) = f.kind else { panic!("the anchor is a choice") };
+    assert_eq!(opts.iter().map(|o| o.0).collect::<Vec<_>>(), ["cursor", "playhead"]);
+    assert_eq!(opts.iter().map(|o| o.1).collect::<Vec<_>>(), ["Cursor position", "Playhead position"]);
+    for (value, _) in opts {
+        assert!(serde_json::from_value::<ZoomAnchor>(json!(value)).is_ok(), "{value} is not an anchor");
+    }
+}
+
 /// New users keep the dark Darkest theme (following the system is opt-in); a file saved before
 /// appearance modes keeps showing its Color Theme as a fixed Dark or Light mode.
 #[test]

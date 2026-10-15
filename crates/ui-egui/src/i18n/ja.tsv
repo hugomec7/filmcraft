@@ -2534,6 +2534,10 @@
 	Time and Pitch	時間とピッチ
 	Timecode Conversion	タイムコード変換
 	Timeline Mouse Scrolling	タイムラインのマウススクロール
+	Scroll to zoom on timeline	マウスホイールでタイムラインをズーム
+	Zoom anchor point	ズームのアンカーポイント
+	Cursor position	カーソル位置
+	Playhead position	再生ヘッドの位置
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール
 	Tint Color	色合い
 	To	変更先

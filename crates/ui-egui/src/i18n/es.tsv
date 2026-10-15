@@ -2548,6 +2548,10 @@
 	Time and Pitch	Tiempo y tono
 	Timecode Conversion	Conversión de código de tiempo
 	Timeline Mouse Scrolling	Desplazamiento con el ratón en la línea de tiempo
+	Scroll to zoom on timeline	Usar la rueda del ratón para hacer zoom en la línea de tiempo
+	Zoom anchor point	Punto de anclaje del zoom
+	Cursor position	Posición del cursor
+	Playhead position	Posición del cabezal
 	Timeline Playback Auto-Scrolling	Desplazamiento automático de la línea de tiempo al reproducir
 	Tint Color	Color del matiz
 	To	Hasta
