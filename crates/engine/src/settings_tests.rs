@@ -1002,3 +1002,48 @@ fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     assert_eq!(s.prefs.timeline.source_wheel, "zoom");
     assert_eq!(s.prefs.timeline.effect_controls_wheel, "stepFrames");
 }
+
+#[test]
+fn timeline_wheel_can_resize_tracks_and_the_middle_button_pan_can_be_turned_off() {
+    let p = settings::TimelinePrefs::default();
+    assert!(p.middle_button_pan, "the classic behaviour: a middle-button drag pans");
+
+    let mut s = Session::default();
+    set(&mut s, "timeline.ctrlShiftScrolling", json!("trackHeightAll"));
+    set(&mut s, "timeline.altScrolling", json!("trackHeightOne"));
+    set(&mut s, "timeline.middleButtonPan", json!(false));
+    assert_eq!(s.prefs.timeline.wheel_action(true, false, true), "trackHeightAll");
+    assert_eq!(s.prefs.timeline.wheel_action(false, true, false), "trackHeightOne");
+    assert!(!s.prefs.timeline.middle_button_pan);
+    // survives a save and load
+    let back = Preferences::from_value(s.prefs.to_value());
+    assert_eq!(back.timeline.ctrl_shift_scrolling, "trackHeightAll");
+    assert!(!back.timeline.middle_button_pan);
+    // an unknown action is refused
+    assert!(s.execute("prefs.set", json!({"key": "timeline.ctrlShiftScrolling", "value": "resizeEverything"})).is_err());
+}
+
+#[test]
+fn timeline_choice_labels_name_no_other_product_and_mark_the_classic_defaults() {
+    for (_, f) in settings::fields().into_iter().filter(|(_, f)| f.key.starts_with("timeline.")) {
+        assert!(!f.label.contains("Premiere") && !f.label.contains("Vegas"), "{}", f.label);
+        if let Kind::Choice(opts) = f.kind {
+            for (_, label) in opts {
+                assert!(!label.contains("Premiere") && !label.contains("Vegas"), "{label}");
+            }
+        }
+    }
+    // each wheel row marks the option that is the shipped default
+    let p = settings::TimelinePrefs::default();
+    for (key, default) in [
+        ("timeline.mouseScrolling", p.mouse_scrolling.as_str()),
+        ("timeline.altScrolling", p.alt_scrolling.as_str()),
+        ("timeline.shiftScrolling", p.shift_scrolling.as_str()),
+        ("timeline.ctrlScrolling", p.ctrl_scrolling.as_str()),
+        ("timeline.ctrlShiftScrolling", p.ctrl_shift_scrolling.as_str()),
+    ] {
+        let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
+        let marked: Vec<&str> = opts.iter().filter(|(_, l)| l.contains("(Classic)")).map(|(v, _)| *v).collect();
+        assert_eq!(marked, vec![default], "{key}");
+    }
+}

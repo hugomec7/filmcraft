@@ -19,7 +19,7 @@ use serde_json::{Value, json};
 
 use crate::FilmcraftApp;
 use crate::icons::{self, Icon};
-use crate::state::{ThumbnailMode, TimelineView, Tool};
+use crate::state::{TRACK_H_MAX, TRACK_H_MIN, ThumbnailMode, TimelineView, Tool};
 use crate::theme::Tokens;
 
 use super::timeline_hit::{EdgeKind, Grab, edge_geometry, grab_at, marker_at, marker_range_rect, marker_rect, marker_under_pointer};
@@ -29,6 +29,8 @@ use filmcraft_engine::settings::ZoomAnchor;
 
 const TOP_H: f32 = 58.0; // timecode + toolbar (left) / ruler (right)
 const RULER_H: f32 = 44.0;
+/// Most the wheel changes a track's height by in one event, in points.
+const TRACK_H_STEP_MAX: f32 = 16.0;
 /// Height of the upper In/Out drag band when the split time ruler option is enabled.
 pub const RULER_SPLIT_OFFSET: f32 = 22.0;
 const SCROLLBAR_H: f32 = 17.0;
@@ -175,7 +177,7 @@ pub enum Drag {
         individual: bool,
     },
     Divider,
-    /// Dragging in the upper half of the split time ruler to set the sequence In/Out range (Vegas Pro style).
+    /// Dragging in the upper half of the split time ruler to set the sequence In/Out range.
     RulerInOut {
         anchor: Tick,
         current: Tick,
@@ -243,16 +245,18 @@ fn new_track_at(seq: &Sequence, layout: &Layout, y: f32, vh: f32, ah: f32) -> Op
     }
 }
 
-/// The top of each of `n` video rows `vh` high, V1 first: V1 sits at the bottom of `area` and the
-/// tracks stack upward; `v_scroll` (clamped here) shifts them up. Also gives the largest `v_scroll`.
+/// The top of each video row (`heights`, V1 first; `new_h` is the empty row above the top one): V1
+/// sits at the bottom of `area` and the tracks stack upward; `v_scroll` (clamped here) shifts them up. Also gives the largest `v_scroll`.
 /// The scroll range includes one empty track's height above the top track: without it, tracks that
 /// fill the area leave no space where a drop adds a new one (#1522).
-fn video_row_tops(area: Rect, n: usize, vh: f32, v_scroll: &mut f32) -> (Vec<f32>, f32) {
-    let total = (n + 1) as f32 * vh;
+fn video_row_tops(area: Rect, heights: &[f32], new_h: f32, v_scroll: &mut f32) -> (Vec<f32>, f32) {
+    let total = heights.iter().sum::<f32>() + new_h;
     let v_off = (area.height() - total).max(0.0);
     let max_vs = (total - area.height()).max(0.0);
     *v_scroll = v_scroll.clamp(0.0, max_vs);
-    let tops = (0..n).map(|i| area.min.y + v_off + (n - i) as f32 * vh - (max_vs - *v_scroll)).collect();
+    let base = area.min.y + v_off - (max_vs - *v_scroll);
+    // track i has the empty drop row and the tracks above it (higher indexes) over it
+    let tops = (0..heights.len()).map(|i| base + new_h + heights.iter().skip(i + 1).sum::<f32>()).collect();
     (tops, max_vs)
 }
 
@@ -447,20 +451,20 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     let video_area = Rect::from_min_max(pos2(rect.min.x, tracks_area.min.y), pos2(content.max.x, split_y));
     let audio_area = Rect::from_min_max(pos2(rect.min.x, split_y + DIVIDER_H), pos2(content.max.x, tracks_area.max.y - MASTER_H));
     let vh = app.ui.timeline.video_track_h;
-    let ah = app.ui.timeline.audio_track_h;
     let mut rows = Vec::new();
-    let nv = seq.video_tracks.len();
-    let (video_tops, max_vs) = video_row_tops(video_area, nv, vh, &mut app.ui.timeline.v_scroll);
-    for ((i, tr), top) in seq.video_tracks.iter().enumerate().zip(video_tops) {
-        let rect = Rect::from_min_max(pos2(content.min.x, top), pos2(content.max.x, top + vh));
+    let video_heights: Vec<f32> = seq.video_tracks.iter().map(|tr| app.ui.timeline.track_height(true, tr.id.0)).collect();
+    let (video_tops, max_vs) = video_row_tops(video_area, &video_heights, vh, &mut app.ui.timeline.v_scroll);
+    for (((i, tr), top), h) in seq.video_tracks.iter().enumerate().zip(video_tops).zip(&video_heights) {
+        let rect = Rect::from_min_max(pos2(content.min.x, top), pos2(content.max.x, top + h));
         rows.push(Row { track: tr.id, kind: TrackKind::Video, index: i, rect, lane: false });
     }
-    let na = seq.audio_tracks.len();
-    let max_as = (na as f32 * ah - audio_area.height()).max(0.0);
+    let audio_heights: Vec<f32> = seq.audio_tracks.iter().map(|tr| app.ui.timeline.track_height(false, tr.id.0)).collect();
+    let max_as = (audio_heights.iter().sum::<f32>() - audio_area.height()).max(0.0);
     app.ui.timeline.a_scroll = app.ui.timeline.a_scroll.clamp(0.0, max_as);
-    for (i, tr) in seq.audio_tracks.iter().enumerate() {
-        let top = audio_area.min.y + i as f32 * ah - app.ui.timeline.a_scroll;
-        let rect = Rect::from_min_max(pos2(content.min.x, top), pos2(content.max.x, top + ah));
+    let mut audio_top = audio_area.min.y - app.ui.timeline.a_scroll;
+    for ((i, tr), ah) in seq.audio_tracks.iter().enumerate().zip(&audio_heights) {
+        let rect = Rect::from_min_max(pos2(content.min.x, audio_top), pos2(content.max.x, audio_top + ah));
+        audio_top += ah;
         rows.push(Row { track: tr.id, kind: TrackKind::Audio, index: i, rect, lane: app.ui.timeline.track_lanes.contains_key(&tr.id.0) });
     }
     let layout = Layout { content, ruler, rows: rows.clone(), pps, scroll, split_y };
@@ -1410,7 +1414,7 @@ fn draw_headers(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, rows:
             if eresp.dragged() {
                 let d = eresp.drag_delta().y * if r.kind == TrackKind::Video { -1.0 } else { 1.0 };
                 let h = if r.kind == TrackKind::Video { &mut app.ui.timeline.video_track_h } else { &mut app.ui.timeline.audio_track_h };
-                *h = (*h + d).clamp(22.0, 220.0);
+                *h = (*h + d).clamp(TRACK_H_MIN, TRACK_H_MAX);
             }
         }
         let resp = ui.interact(
@@ -1528,10 +1532,12 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                 }
                 ui.separator();
                 if ui.button(tl!("Expand All Tracks")).clicked() {
+                    app.ui.timeline.track_h_override.clear();
                     app.ui.timeline.video_track_h = 64.0;
                     app.ui.timeline.audio_track_h = 64.0;
                 }
                 if ui.button(tl!("Minimize All Tracks")).clicked() {
+                    app.ui.timeline.track_h_override.clear();
                     app.ui.timeline.video_track_h = 26.0;
                     app.ui.timeline.audio_track_h = 26.0;
                 }
@@ -1553,10 +1559,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
     let split_ruler = app.session.prefs.timeline.ruler_drag_in_out;
     let split_line_y = ruler.min.y + RULER_SPLIT_OFFSET;
     if split_ruler {
-        clip.line_segment(
-            [pos2(ruler.min.x, split_line_y), pos2(ruler.max.x, split_line_y)],
-            Stroke::new(1.0, t.separator.gamma_multiply(0.8)),
-        );
+        clip.line_segment([pos2(ruler.min.x, split_line_y), pos2(ruler.max.x, split_line_y)], Stroke::new(1.0, t.separator.gamma_multiply(0.8)));
     }
     if mark_in.is_some() || mark_out.is_some() {
         let a = layout.x_of(mark_in.unwrap_or(Tick::ZERO));
@@ -2360,16 +2363,9 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             };
             match action.as_str() {
                 "zoom" if w.delta.y != 0.0 => {
-                    let classic_alt = w.alt
-                        && !w.command
-                        && !w.shift
-                        && !app.session.prefs.timeline.scroll_to_zoom
-                        && app.session.prefs.timeline.mouse_scrolling != "zoom";
-                    let factor = if classic_alt {
-                        (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0)
-                    } else {
-                        wheel_zoom_factor(w.delta.y as f64)
-                    };
+                    let classic_alt =
+                        w.alt && !w.command && !w.shift && !app.session.prefs.timeline.scroll_to_zoom && app.session.prefs.timeline.mouse_scrolling != "zoom";
+                    let factor = if classic_alt { (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0) } else { wheel_zoom_factor(w.delta.y as f64) };
                     zoom_timeline(app, layout, p.x, factor, anchor);
                     ctx.request_repaint();
                 }
@@ -2391,11 +2387,36 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                     let d = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
                     if d != 0.0 {
                         let notches = ((-d / 40.0).round() as i64).clamp(-10, 10);
-                        let step = if notches != 0 { notches } else if d < 0.0 { 1 } else { -1 };
+                        let step = if notches != 0 {
+                            notches
+                        } else if d < 0.0 {
+                            1
+                        } else {
+                            -1
+                        };
                         let next = (app.session.playhead() + Tick(rate.frame_duration().0.saturating_mul(step))).max(Tick::ZERO);
                         app.stop();
                         app.session.set_playhead(next);
                     }
+                }
+                // wheel up makes the tracks taller, wheel down shorter: every track of the half under the
+                // pointer (video above the divider, audio below it), or only the one under the pointer
+                "trackHeightAll" | "trackHeightOne" if w.delta.y != 0.0 && p.y >= layout.content.min.y && p.y < layout.content.max.y - MASTER_H => {
+                    let video = p.y < layout.split_y;
+                    let step = (w.delta.y * 0.25).clamp(-TRACK_H_STEP_MAX, TRACK_H_STEP_MAX);
+                    let tv = &mut app.ui.timeline;
+                    if action == "trackHeightAll" {
+                        let kind = if video { TrackKind::Video } else { TrackKind::Audio };
+                        // the tracks first take the shared height, so a track sized alone joins the others
+                        let shared = if video { &mut tv.video_track_h } else { &mut tv.audio_track_h };
+                        *shared = (*shared + step).clamp(TRACK_H_MIN, TRACK_H_MAX);
+                        let ids: Vec<u64> = layout.rows.iter().filter(|r| r.kind == kind).map(|r| r.track.0).collect();
+                        tv.track_h_override.retain(|id, _| !ids.contains(id));
+                    } else if let Some(row) = layout.row_at(p.y).filter(|r| (r.kind == TrackKind::Video) == video) {
+                        let now = tv.track_height(video, row.track.0);
+                        tv.track_h_override.insert(row.track.0, (now + step).clamp(TRACK_H_MIN, TRACK_H_MAX));
+                    }
+                    ctx.request_repaint();
                 }
                 _ => {}
             }
@@ -2480,10 +2501,12 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             // a middle-button drag pans whatever the tool and whatever it starts on, as in the
             // monitors (#824) and DaVinci Resolve (#1490); only a primary press is kept in
             // `pressed`, so the pan starts from where the button went down
-            _ if resp.drag_started_by(egui::PointerButton::Middle) => {
+            _ if resp.drag_started_by(egui::PointerButton::Middle) && app.session.prefs.timeline.middle_button_pan => {
                 let last = ctx.input(|i| i.pointer.press_origin()).unwrap_or(p);
                 Some(Drag::Pan { last, start_scroll: app.ui.timeline.target_scroll, start_v: app.ui.timeline.v_scroll })
             }
+            // with the pan turned off in Settings ▸ Timeline, the middle button does nothing here
+            _ if resp.drag_started_by(egui::PointerButton::Middle) => None,
             (Tool::Selection, _) if on_playhead_line(app, seq, layout, p) => Some(Drag::Scrub { initial: app.session.playhead() }),
             (_, Grab::Other(Hit::Ruler)) => {
                 if in_ruler_inout_band(app, seq, layout, p) {
@@ -2583,10 +2606,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (Tool::Slip, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slip { clip, delta: Tick::ZERO }),
             (Tool::Slide, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slide { clip, delta: Tick::ZERO }),
             (_, Grab::Other(Hit::Clip { clip, track, .. })) => {
-                if resp.clicked()
-                    && app.session.prefs.timeline.click_to_move_playhead == "anywhere"
-                    && !(mods.shift || mods.alt || mods.command)
-                {
+                if resp.clicked() && app.session.prefs.timeline.click_to_move_playhead == "anywhere" && !(mods.shift || mods.alt || mods.command) {
                     scrub_playhead(app, seq, layout, p, false);
                     None
                 } else {
@@ -2910,7 +2930,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         }
     }
 
-    // ---- double-click the upper In/Out ruler band: clear In and Out marks (Vegas Pro)
+    // ---- double-click the upper In/Out ruler band: clear In and Out marks
     if resp.double_clicked()
         && let Some(p) = resp.interact_pointer_pos()
         && in_ruler_inout_band(app, seq, layout, p)
@@ -3540,7 +3560,7 @@ mod new_track_tests {
         // video area 0..150 holds V1..V3 exactly; scrolled up as far as it goes
         let area = Rect::from_min_max(pos2(0.0, 0.0), pos2(800.0, 150.0));
         let mut v_scroll = f32::MAX;
-        let (tops, _) = video_row_tops(area, 3, 50.0, &mut v_scroll);
+        let (tops, _) = video_row_tops(area, &[50.0; 3], 50.0, &mut v_scroll);
         let rows = seq
             .video_tracks
             .iter()
@@ -3565,7 +3585,7 @@ mod new_track_tests {
         assert_eq!(new_track_at(&seq, &layout, 10.0, 50.0, 50.0), Some((TrackKind::Video, Rect::from_min_max(pos2(0.0, 0.0), pos2(800.0, 50.0)))));
         // scrolled to the bottom, V1..V3 fill the area as before
         let mut v_scroll = 0.0;
-        assert_eq!(video_row_tops(area, 3, 50.0, &mut v_scroll).0, vec![100.0, 50.0, 0.0]);
+        assert_eq!(video_row_tops(area, &[50.0; 3], 50.0, &mut v_scroll).0, vec![100.0, 50.0, 0.0]);
     }
 }
 
