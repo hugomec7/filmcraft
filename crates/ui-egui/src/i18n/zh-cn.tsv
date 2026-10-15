@@ -3593,20 +3593,25 @@
 	Ctrl + Shift + Scroll	Ctrl + Shift + 滚轮
 	Playhead and Time Ruler	播放头与时间标尺
 	Move playhead on timeline click	点击时间轴时移动播放头
-	Ruler only (Premiere Pro)	仅时间标尺（Premiere Pro）
+	Ruler only (Classic)	仅时间标尺（经典）
 	Empty space only	仅空白区域
-	Anywhere on timeline (Vegas Pro)	时间轴任意位置（Vegas Pro）
+	Anywhere on timeline	时间轴任意位置
 	Drag playhead line across tracks	在轨道上拖动播放头线
-	Off (ruler head only)	关闭（仅标尺顶部）
-	Empty space only (Premiere Pro)	仅空白区域（Premiere Pro）
-	Anywhere, including over clips (Vegas Pro)	任意位置，包括片段上方（Vegas Pro）
-	Split time ruler: drag upper half to set In/Out range (Vegas Pro)	分割时间标尺：拖动上半部分设置入点/出点范围（Vegas Pro）
+	Off (ruler head only) (Classic)	关闭（仅标尺顶部）（经典）
+	Anywhere, including over clips	任意位置，包括片段上方
+	Split time ruler: drag upper half to set In/Out range	分割时间标尺：拖动上半部分设置入点/出点范围
 	Other Timelines Mouse Wheel	其他时间轴鼠标滚轮
 	Program Monitor timeline wheel	节目监视器时间轴滚轮
 	Source Monitor timeline wheel	源监视器时间轴滚轮
 	Effect Controls timeline wheel	效果控件时间轴滚轮
-	Default (Disabled)	默认（禁用）
 	Zoom timeline	缩放时间轴
 	Step between keyframes	在关键帧之间步进
 	Scroll horizontally	水平滚动
 	Timeline mouse wheel behavior	时间轴鼠标滚轮行为
+	Vertical (Classic)	垂直（经典）
+	Horizontal (Classic)	水平（经典）
+	Zoom (Classic)	缩放（经典）
+	Track height: all video or all audio tracks (by pointer)	轨道高度：指针所在区域的全部视频或音频轨道
+	Track height: only the track under the pointer	轨道高度：仅指针下的轨道
+	Pan the Timeline by dragging with the middle mouse button	按住鼠标中键拖动以平移时间轴
+	Disabled (Classic)	已禁用（经典）

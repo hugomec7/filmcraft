@@ -202,7 +202,8 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     // scrollbar sits at the panel's right edge (#643)
     let mut bui = ui.new_child(egui::UiBuilder::new().max_rect(Rect::from_min_max(body.min, pos2(lane.max.x, body.max.y))).id_salt("ec-body"));
     bui.set_clip_rect(Rect::from_min_max(body.min, pos2(rect.max.x, body.max.y)));
-    let scroll_out = egui::ScrollArea::vertical().id_salt("ec-scroll").auto_shrink([false, false]).show(&mut bui, |bui| {
+    let wheel_source = egui::scroll_area::ScrollSource { mouse_wheel: !ec_wheel_claimed(app, ui, lane), ..Default::default() };
+    let scroll_out = egui::ScrollArea::vertical().id_salt("ec-scroll").scroll_source(wheel_source).auto_shrink([false, false]).show(&mut bui, |bui| {
         for (clip, it, kind) in &clips {
             let clip = *clip;
             let (hr, _) = bui.allocate_exact_size(vec2(body.width(), 18.0), Sense::hover());
@@ -392,6 +393,21 @@ fn seq_name(app: &FilmcraftApp) -> String {
     app.session.state.active_sequence.and_then(|s| app.session.project.item(s)).map(|i| i.name.clone()).unwrap_or_default()
 }
 
+/// Whether the wheel over the Effect Controls keyframe lane belongs to the lane (its wheel mode, or
+/// a modifier action it just ran) instead of to the vertical scroll of the effect rows.
+fn ec_wheel_claimed(app: &FilmcraftApp, ui: &egui::Ui, lane: Rect) -> bool {
+    let ctx = ui.ctx();
+    let full_lane = Rect::from_min_max(lane.min, pos2(lane.max.x, lane.max.y + 26.0));
+    if !ui.rect_contains_pointer(full_lane) {
+        return false;
+    }
+    if app.session.prefs.timeline.effect_controls_wheel != "off" {
+        return true;
+    }
+    let now = ctx.input(|i| i.time);
+    ctx.data(|d| d.get_temp::<f64>(egui::Id::new("ec-wheel-claim"))).is_some_and(|t| (now - t).abs() < 0.6)
+}
+
 /// Mouse wheel over the Effect Controls keyframe lane (and footer zoom bar).
 fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &TrackItem, rate: filmcraft_time::FrameRate) {
     let ctx = ui.ctx().clone();
@@ -422,19 +438,18 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     if action == "off" {
         return;
     }
-    // Consume smooth_scroll_delta so the vertical ScrollArea does not scroll effect rows while
-    // zooming or stepping keyframes over the timeline lane.
+    // egui spreads one wheel notch over several frames (smooth scrolling), so zeroing this frame's
+    // delta is not enough: remember that the lane claimed the wheel, and the rows' ScrollArea stops
+    // listening to it until the smoothing has run out (see `ec_wheel_claimed`).
     ctx.input_mut(|i| i.smooth_scroll_delta = egui::Vec2::ZERO);
+    let now = ctx.input(|i| i.time);
+    ctx.data_mut(|d| d.insert_temp(egui::Id::new("ec-wheel-claim"), now));
     let len = it.duration.0.max(1) as f64;
     let min_span = (rate.frame_duration().0.saturating_mul(5) as f64 / len).clamp(1e-6, 1.0);
     let ph = app.session.playhead();
     match action {
         "zoom" => {
-            let factor = if pinching {
-                w.pinch as f64
-            } else {
-                crate::panels::timeline_zoom::wheel_zoom_factor(w.delta.y as f64)
-            };
+            let factor = if pinching { w.pinch as f64 } else { crate::panels::timeline_zoom::wheel_zoom_factor(w.delta.y as f64) };
             let cursor_u = ((p.x - lane.min.x) / lane.width().max(1.0)).clamp(0.0, 1.0) as f64;
             let playhead_f = (app.session.prefs.timeline.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
                 .then(|| ((ph - it.start).0 as f64 / len).clamp(0.0, 1.0));
@@ -452,7 +467,13 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
             let d = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
             if d != 0.0 {
                 let notches = ((-d / 40.0).round() as i64).clamp(-10, 10);
-                let step = if notches != 0 { notches } else if d < 0.0 { 1 } else { -1 };
+                let step = if notches != 0 {
+                    notches
+                } else if d < 0.0 {
+                    1
+                } else {
+                    -1
+                };
                 let next = (ph + Tick(rate.frame_duration().0.saturating_mul(step))).clamp(it.start, it.end());
                 app.stop();
                 app.session.set_playhead(next);
@@ -475,17 +496,12 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
                 }
                 cands.sort_unstable();
                 cands.dedup();
-                let found = if forward {
-                    cands.into_iter().find(|&t| t > ph + Tick(1))
-                } else {
-                    cands.into_iter().rev().find(|&t| t + Tick(1) < ph)
-                };
-                let next = found.unwrap_or_else(|| {
-                    let step = if forward { rate.frame_duration() } else { -rate.frame_duration() };
-                    (ph + step).clamp(it.start, it.end())
-                });
-                app.stop();
-                app.session.set_playhead(next);
+                let found = if forward { cands.into_iter().find(|&t| t > ph + Tick(1)) } else { cands.into_iter().rev().find(|&t| t + Tick(1) < ph) };
+                // only keyframes count: with none in that direction the playhead stays
+                if let Some(next) = found {
+                    app.stop();
+                    app.session.set_playhead(next);
+                }
             }
         }
         _ => {}
@@ -509,13 +525,9 @@ fn ec_footer_controls(
     let btn_w = (split - rect.min.x - 114.0).clamp(24.0, 145.0);
     if btn_w >= 24.0 {
         let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 23.0), vec2(btn_w, 20.0));
-        let label = filmcraft_engine::settings::PANEL_WHEEL
-            .iter()
-            .find(|(k, _)| *k == mode)
-            .map(|(_, l)| crate::i18n::t(l))
-            .unwrap_or(tl!("Default (Disabled)"));
-        let resp = crate::widgets::dropdown_text(ui, br, label, t, egui::Id::new("ec-wheel-mode"))
-            .on_hover_text(tl!("Timeline mouse wheel behavior"));
+        let label =
+            filmcraft_engine::settings::PANEL_WHEEL.iter().find(|(k, _)| *k == mode).map(|(_, l)| crate::i18n::t(l)).unwrap_or(tl!("Disabled (Classic)"));
+        let resp = crate::widgets::dropdown_text(ui, br, label, t, egui::Id::new("ec-wheel-mode")).on_hover_text(tl!("Timeline mouse wheel behavior"));
         app.auto.add("effectControls.wheelMode", br, "Timeline mouse wheel behavior");
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_min_width(210.0);
@@ -599,11 +611,7 @@ fn ec_footer_controls(
             }
             _ => {
                 let dx = resp.drag_delta().x as f64 / bar.width().max(1.0) as f64;
-                set = Some(if mode == 1 {
-                    ((s + dx).clamp(0.0, (e - min_span).max(0.0)), e)
-                } else {
-                    (s, (e + dx).clamp((s + min_span).min(1.0), 1.0))
-                });
+                set = Some(if mode == 1 { ((s + dx).clamp(0.0, (e - min_span).max(0.0)), e) } else { (s, (e + dx).clamp((s + min_span).min(1.0), 1.0)) });
             }
         }
     }
