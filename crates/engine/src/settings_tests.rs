@@ -957,3 +957,48 @@ fn builtin_label_presets_are_complete_and_distinct() {
     }
     assert!(!settings::is_builtin_label_preset("Team"));
 }
+
+#[test]
+fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
+    let p = settings::TimelinePrefs::default();
+    assert_eq!(p.mouse_scrolling, "vertical");
+    assert_eq!(p.alt_scrolling, "zoom");
+    assert_eq!(p.shift_scrolling, "horizontal");
+    assert_eq!(p.ctrl_scrolling, "horizontal");
+    assert_eq!(p.ctrl_shift_scrolling, "vertical");
+    assert_eq!(p.click_to_move_playhead, "rulerOnly");
+    assert_eq!(p.drag_playhead_line, "off");
+    assert!(!p.ruler_drag_in_out);
+    assert_eq!(p.program_wheel, "off");
+    assert_eq!(p.source_wheel, "off");
+    assert_eq!(p.effect_controls_wheel, "off");
+    assert_eq!(p.wheel_action(false, false, false), "vertical");
+    assert_eq!(p.wheel_action(false, true, false), "zoom");
+    assert_eq!(p.wheel_action(false, false, true), "horizontal");
+    assert_eq!(p.wheel_action(true, false, false), "horizontal");
+    assert_eq!(p.wheel_action(true, false, true), "vertical");
+
+    let mut s = Session::default();
+    set(&mut s, "timeline.mouseScrolling", json!("zoom"));
+    set(&mut s, "timeline.altScrolling", json!("horizontal"));
+    set(&mut s, "timeline.shiftScrolling", json!("vertical"));
+    set(&mut s, "timeline.ctrlScrolling", json!("step"));
+    set(&mut s, "timeline.ctrlShiftScrolling", json!("off"));
+    set(&mut s, "timeline.clickToMovePlayhead", json!("anywhere"));
+    set(&mut s, "timeline.dragPlayheadLine", json!("emptySpace"));
+    set(&mut s, "timeline.rulerDragInOut", json!(true));
+    set(&mut s, "timeline.programWheel", json!("stepKeyframes"));
+    set(&mut s, "timeline.sourceWheel", json!("zoom"));
+    set(&mut s, "timeline.effectControlsWheel", json!("stepFrames"));
+    assert_eq!(s.prefs.timeline.wheel_action(false, false, false), "zoom");
+    assert_eq!(s.prefs.timeline.wheel_action(false, true, false), "horizontal");
+    assert_eq!(s.prefs.timeline.wheel_action(false, false, true), "vertical");
+    assert_eq!(s.prefs.timeline.wheel_action(true, false, false), "step");
+    assert_eq!(s.prefs.timeline.wheel_action(true, false, true), "off");
+    assert_eq!(s.prefs.timeline.click_to_move_playhead, "anywhere");
+    assert_eq!(s.prefs.timeline.drag_playhead_line, "emptySpace");
+    assert!(s.prefs.timeline.ruler_drag_in_out);
+    assert_eq!(s.prefs.timeline.program_wheel, "stepKeyframes");
+    assert_eq!(s.prefs.timeline.source_wheel, "zoom");
+    assert_eq!(s.prefs.timeline.effect_controls_wheel, "stepFrames");
+}

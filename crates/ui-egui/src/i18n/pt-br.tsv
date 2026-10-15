@@ -2551,6 +2551,31 @@
 	Zoom anchor point	Ponto de ancoragem do zoom
 	Cursor position	Posição do cursor
 	Playhead position	Posição da agulha (Playhead)
+	Step playhead (frames)	Avançar/voltar agulha (quadros)
+	Disabled	Desativado
+	Alt + Scroll	Alt + Scroll
+	Shift + Scroll	Shift + Scroll
+	Ctrl + Scroll	Ctrl + Scroll
+	Ctrl + Shift + Scroll	Ctrl + Shift + Scroll
+	Playhead and Time Ruler	Agulha (Playhead) e régua de tempo
+	Move playhead on timeline click	Mover a agulha ao clicar na linha do tempo
+	Ruler only (Premiere Pro)	Apenas na régua de tempo (Premiere Pro)
+	Empty space only	Apenas em espaços vazios
+	Anywhere on timeline (Vegas Pro)	Em qualquer lugar da linha do tempo (Vegas Pro)
+	Drag playhead line across tracks	Arrastar a linha da agulha pelas faixas
+	Off (ruler head only)	Desativado (apenas pelo topo na régua)
+	Empty space only (Premiere Pro)	Apenas em espaços vazios (Premiere Pro)
+	Anywhere, including over clips (Vegas Pro)	Em qualquer lugar, mesmo sobre clipes (Vegas Pro)
+	Split time ruler: drag upper half to set In/Out range (Vegas Pro)	Dividir régua de tempo: arrastar na faixa superior cria Entrada/Saída (In/Out - Vegas Pro)
+	Other Timelines Mouse Wheel	Roda do mouse nas outras linhas do tempo
+	Program Monitor timeline wheel	Scroll na linha do tempo do Monitor de Programa
+	Source Monitor timeline wheel	Scroll na linha do tempo do Monitor de Origem (Source)
+	Effect Controls timeline wheel	Scroll na linha do tempo dos Controles de Efeitos
+	Default (Disabled)	Padrão (Desativado)
+	Zoom timeline	Dar zoom na linha do tempo
+	Step between keyframes	Avançar/voltar entre keyframes
+	Scroll horizontally	Rolar horizontalmente
+	Timeline mouse wheel behavior	Comportamento do scroll na linha do tempo
 	Timeline Playback Auto-Scrolling	Rolagem automática da linha do tempo durante a reprodução
 	Tint Color	Cor da tonalidade
 	To	Até

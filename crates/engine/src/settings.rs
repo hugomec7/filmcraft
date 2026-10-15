@@ -721,14 +721,35 @@ pub struct TimelinePrefs {
     pub still_image_unit: String,
     /// "Timeline Playback Auto-Scrolling": `noScroll` | `pageScroll` | `smoothScroll`.
     pub auto_scroll: String,
-    /// "Timeline Mouse Scrolling": `vertical` | `horizontal`.
+    /// "Timeline Mouse Scrolling" (bare wheel): `vertical` | `horizontal` | `zoom` | `step` | `off`.
     pub mouse_scrolling: String,
+    /// "Alt + Scroll": `zoom` | `horizontal` | `vertical` | `step` | `off`.
+    pub alt_scrolling: String,
+    /// "Shift + Scroll": `horizontal` | `vertical` | `zoom` | `step` | `off`.
+    pub shift_scrolling: String,
+    /// "Ctrl + Scroll": `horizontal` | `vertical` | `zoom` | `step` | `off`.
+    pub ctrl_scrolling: String,
+    /// "Ctrl + Shift + Scroll": `vertical` | `horizontal` | `zoom` | `step` | `off`.
+    pub ctrl_shift_scrolling: String,
     /// "Scroll to zoom on timeline": the bare wheel over the tracks zooms; Alt or Shift + wheel
     /// scrolls sideways (and Cmd / Ctrl + wheel moves the tracks up and down). Off: the classic wheel
     /// (see `mouse_scrolling`) and Alt + wheel to zoom.
     pub scroll_to_zoom: bool,
     /// "Zoom anchor point": the pivot of a wheel or pinch zoom.
     pub zoom_anchor: ZoomAnchor,
+    /// "Move playhead on timeline click": `rulerOnly` | `emptySpace` | `anywhere`.
+    pub click_to_move_playhead: String,
+    /// "Drag playhead line across tracks": `off` | `emptySpace` | `anywhere`.
+    pub drag_playhead_line: String,
+    /// "Split time ruler: drag upper half to set In/Out range": upper half of the time ruler
+    /// drags/edits the sequence In/Out range while the lower half scrubs the playhead.
+    pub ruler_drag_in_out: bool,
+    /// "Program Monitor timeline wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    pub program_wheel: String,
+    /// "Source Monitor timeline wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    pub source_wheel: String,
+    /// "Effect Controls timeline wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    pub effect_controls_wheel: String,
     /// Default Audio Tracks per media type: `useFile` | `mono` | `stereo` | `5.1` | `adaptive`.
     pub mono_media_tracks: String,
     pub stereo_media_tracks: String,
@@ -758,8 +779,18 @@ impl Default for TimelinePrefs {
             still_image_unit: "seconds".into(),
             auto_scroll: "pageScroll".into(),
             mouse_scrolling: "vertical".into(),
+            alt_scrolling: "zoom".into(),
+            shift_scrolling: "horizontal".into(),
+            ctrl_scrolling: "horizontal".into(),
+            ctrl_shift_scrolling: "vertical".into(),
             scroll_to_zoom: false,
             zoom_anchor: ZoomAnchor::Cursor,
+            click_to_move_playhead: "rulerOnly".into(),
+            drag_playhead_line: "off".into(),
+            ruler_drag_in_out: false,
+            program_wheel: "off".into(),
+            source_wheel: "off".into(),
+            effect_controls_wheel: "off".into(),
             mono_media_tracks: "useFile".into(),
             stereo_media_tracks: "useFile".into(),
             surround_media_tracks: "useFile".into(),
@@ -784,6 +815,35 @@ fn duration_in(value: f64, unit: &str, rate: FrameRate) -> Tick {
 }
 
 impl TimelinePrefs {
+    /// The action a mouse wheel gesture with the given modifiers performs on the Timeline:
+    /// `"vertical"` | `"horizontal"` | `"zoom"` | `"step"` | `"off"`.
+    pub fn wheel_action(&self, ctrl: bool, alt: bool, shift: bool) -> &str {
+        if self.scroll_to_zoom && self.mouse_scrolling == "vertical" {
+            if ctrl {
+                return "vertical";
+            }
+            if alt || shift {
+                return "horizontal";
+            }
+            return "zoom";
+        }
+        if ctrl && shift {
+            self.ctrl_shift_scrolling.as_str()
+        } else if ctrl {
+            if self.mouse_scrolling == "horizontal" && self.ctrl_scrolling == "horizontal" {
+                "vertical"
+            } else {
+                self.ctrl_scrolling.as_str()
+            }
+        } else if alt {
+            self.alt_scrolling.as_str()
+        } else if shift {
+            self.shift_scrolling.as_str()
+        } else {
+            self.mouse_scrolling.as_str()
+        }
+    }
+
     /// "Still Image Default Duration" at a sequence rate (whole frames, at least one).
     pub fn still_duration(&self, rate: FrameRate) -> Tick {
         duration_in(self.still_image_duration, &self.still_image_unit, rate)
@@ -991,8 +1051,31 @@ const CACHE_MGMT: &[(&str, &str)] = &[
     ("exceedsSize", "Automatically delete oldest cache files when cache exceeds"),
 ];
 const AUTO_SCROLL: &[(&str, &str)] = &[("noScroll", "No Scroll"), ("pageScroll", "Page Scroll"), ("smoothScroll", "Smooth Scroll")];
-const MOUSE_SCROLL: &[(&str, &str)] = &[("vertical", "Vertical"), ("horizontal", "Horizontal")];
+pub const MOUSE_SCROLL: &[(&str, &str)] = &[
+    ("vertical", "Vertical"),
+    ("horizontal", "Horizontal"),
+    ("zoom", "Zoom"),
+    ("step", "Step playhead (frames)"),
+    ("off", "Disabled"),
+];
 const ZOOM_ANCHOR: &[(&str, &str)] = &[("cursor", "Cursor position"), ("playhead", "Playhead position")];
+const CLICK_PLAYHEAD: &[(&str, &str)] = &[
+    ("rulerOnly", "Ruler only (Premiere Pro)"),
+    ("emptySpace", "Empty space only"),
+    ("anywhere", "Anywhere on timeline (Vegas Pro)"),
+];
+const DRAG_PLAYHEAD_LINE: &[(&str, &str)] = &[
+    ("off", "Off (ruler head only)"),
+    ("emptySpace", "Empty space only (Premiere Pro)"),
+    ("anywhere", "Anywhere, including over clips (Vegas Pro)"),
+];
+pub const PANEL_WHEEL: &[(&str, &str)] = &[
+    ("off", "Default (Disabled)"),
+    ("zoom", "Zoom timeline"),
+    ("stepFrames", "Step playhead (frames)"),
+    ("stepKeyframes", "Step between keyframes"),
+    ("scroll", "Scroll horizontally"),
+];
 const HW_DECODE: &[(&str, &str)] = &[("auto", "Auto"), ("off", "Off")];
 const TRACKS: &[(&str, &str)] = &[("useFile", "Use File"), ("mono", "Mono"), ("stereo", "Stereo"), ("5.1", "5.1"), ("adaptive", "Adaptive")];
 pub const DURATION_UNITS: &[(&str, &str)] = &[("frames", "Frames"), ("seconds", "Seconds")];
@@ -1343,9 +1426,34 @@ static CATEGORIES: &[Category] = &[
             f("timeline.audioTransitionDuration", "Audio Transition Default Duration", Kind::Duration { unit_key: "timeline.audioTransitionUnit" }, true),
             f("timeline.stillImageDuration", "Still Image Default Duration", Kind::Duration { unit_key: "timeline.stillImageUnit" }, true),
             f("timeline.autoScroll", "Timeline Playback Auto-Scrolling", Kind::Choice(AUTO_SCROLL), true),
-            f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
-            b("timeline.scrollToZoom", "Scroll to zoom on timeline", true),
-            f("timeline.zoomAnchor", "Zoom anchor point", Kind::Choice(ZOOM_ANCHOR), true),
+            Row::Group(
+                "Timeline Mouse Scrolling",
+                &[
+                    f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
+                    f("timeline.altScrolling", "Alt + Scroll", Kind::Choice(MOUSE_SCROLL), true),
+                    f("timeline.shiftScrolling", "Shift + Scroll", Kind::Choice(MOUSE_SCROLL), true),
+                    f("timeline.ctrlScrolling", "Ctrl + Scroll", Kind::Choice(MOUSE_SCROLL), true),
+                    f("timeline.ctrlShiftScrolling", "Ctrl + Shift + Scroll", Kind::Choice(MOUSE_SCROLL), true),
+                    b("timeline.scrollToZoom", "Scroll to zoom on timeline", true),
+                    f("timeline.zoomAnchor", "Zoom anchor point", Kind::Choice(ZOOM_ANCHOR), true),
+                ],
+            ),
+            Row::Group(
+                "Playhead and Time Ruler",
+                &[
+                    f("timeline.clickToMovePlayhead", "Move playhead on timeline click", Kind::Choice(CLICK_PLAYHEAD), true),
+                    f("timeline.dragPlayheadLine", "Drag playhead line across tracks", Kind::Choice(DRAG_PLAYHEAD_LINE), true),
+                    b("timeline.rulerDragInOut", "Split time ruler: drag upper half to set In/Out range (Vegas Pro)", true),
+                ],
+            ),
+            Row::Group(
+                "Other Timelines Mouse Wheel",
+                &[
+                    f("timeline.programWheel", "Program Monitor timeline wheel", Kind::Choice(PANEL_WHEEL), true),
+                    f("timeline.sourceWheel", "Source Monitor timeline wheel", Kind::Choice(PANEL_WHEEL), true),
+                    f("timeline.effectControlsWheel", "Effect Controls timeline wheel", Kind::Choice(PANEL_WHEEL), true),
+                ],
+            ),
             Row::Group(
                 "Default Audio Tracks",
                 &[

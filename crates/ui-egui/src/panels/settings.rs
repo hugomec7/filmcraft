@@ -56,7 +56,20 @@ pub struct SettingsDraft {
 /// Open the dialog on a category page.
 pub fn open(app: &mut FilmcraftApp, page: &str) -> Result<Value, String> {
     let cat = settings::category(page).ok_or_else(|| format!("unknown settings category `{page}`"))?;
-    app.ui.settings = Some(SettingsDraft { page: cat.id.into(), values: app.session.prefs.to_value(), ..Default::default() });
+    let mut values = app.session.prefs.to_value();
+    if get(&values, "timeline.scrollToZoom").as_bool() == Some(true)
+        && choice_text(get(&values, "timeline.mouseScrolling")) == "vertical"
+    {
+        put(&mut values, "timeline.mouseScrolling", json!("zoom"));
+        if choice_text(get(&values, "timeline.altScrolling")) == "zoom" {
+            put(&mut values, "timeline.altScrolling", json!("horizontal"));
+        }
+        if choice_text(get(&values, "timeline.ctrlScrolling")) == "horizontal" {
+            put(&mut values, "timeline.ctrlScrolling", json!("vertical"));
+        }
+        put(&mut values, "timeline.scrollToZoom", json!(false));
+    }
+    app.ui.settings = Some(SettingsDraft { page: cat.id.into(), values, ..Default::default() });
     app.dialog = Some(Dialog::Preferences);
     Ok(json!({"dialog": "settings", "page": cat.id}))
 }
@@ -123,8 +136,14 @@ pub fn appearance_context_menu(app: &mut FilmcraftApp, ui: &mut Ui) {
 }
 
 /// Keys the Appearance page draws as the mode selector and theme cards instead of plain fields.
-const APPEARANCE_KEYS: &[&str] =
-    &["appearance.appearanceMode", "appearance.lightTheme", "appearance.darkTheme", "appearance.colorTheme", "appearance.favoriteThemes"];
+const APPEARANCE_KEYS: &[&str] = &[
+    "appearance.appearanceMode",
+    "appearance.lightTheme",
+    "appearance.darkTheme",
+    "appearance.colorTheme",
+    "appearance.favoriteThemes",
+    "timeline.scrollToZoom",
+];
 
 /// A small FilmCraft editor painted with `t`'s colours: the header with the Import / Edit / Export
 /// tabs, the Source and Program monitors, the Project panel, the tools, the Timeline with video and
@@ -529,6 +548,17 @@ fn draw_field(app: &mut FilmcraftApp, ui: &mut Ui, d: &mut SettingsDraft, f: &Fi
                 Kind::Choice(opts) => {
                     field_label(ui, f.label);
                     if let Some(v) = combo(app, ui, f.key, &choice_text(&cur), &static_opts(opts), 300.0) {
+                        if f.key == "timeline.mouseScrolling" {
+                            put(&mut d.values, "timeline.scrollToZoom", json!(false));
+                            if v == "zoom" {
+                                if choice_text(get(&d.values, "timeline.altScrolling")) == "zoom" {
+                                    put(&mut d.values, "timeline.altScrolling", json!("horizontal"));
+                                }
+                                if choice_text(get(&d.values, "timeline.ctrlScrolling")) == "horizontal" {
+                                    put(&mut d.values, "timeline.ctrlScrolling", json!("vertical"));
+                                }
+                            }
+                        }
                         let x = if cur.is_number() { v.parse::<u64>().map(Value::from).unwrap_or(json!(v)) } else { json!(v) };
                         put(&mut d.values, f.key, x);
                     }

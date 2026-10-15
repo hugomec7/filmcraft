@@ -2552,6 +2552,31 @@
 	Zoom anchor point	Punto de anclaje del zoom
 	Cursor position	Posición del cursor
 	Playhead position	Posición del cabezal
+	Step playhead (frames)	Avanzar/retroceder cabezal (fotogramas)
+	Disabled	Desactivado
+	Alt + Scroll	Alt + Rueda
+	Shift + Scroll	Mayús + Rueda
+	Ctrl + Scroll	Ctrl + Rueda
+	Ctrl + Shift + Scroll	Ctrl + Mayús + Rueda
+	Playhead and Time Ruler	Cabezal de reproducción y regla de tiempo
+	Move playhead on timeline click	Mover el cabezal al hacer clic en la línea de tiempo
+	Ruler only (Premiere Pro)	Solo en la regla de tiempo (Premiere Pro)
+	Empty space only	Solo en espacios vacíos
+	Anywhere on timeline (Vegas Pro)	En cualquier lugar de la línea de tiempo (Vegas Pro)
+	Drag playhead line across tracks	Arrastrar la línea del cabezal sobre las pistas
+	Off (ruler head only)	Desactivado (solo desde la regla)
+	Empty space only (Premiere Pro)	Solo en espacios vacíos (Premiere Pro)
+	Anywhere, including over clips (Vegas Pro)	En cualquier lugar, incluso sobre clips (Vegas Pro)
+	Split time ruler: drag upper half to set In/Out range (Vegas Pro)	Dividir regla de tiempo: arrastrar en la mitad superior define Entrada/Salida (Vegas Pro)
+	Other Timelines Mouse Wheel	Rueda del ratón en otras líneas de tiempo
+	Program Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de programa
+	Source Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de origen
+	Effect Controls timeline wheel	Rueda en la línea de tiempo de Controles de efectos
+	Default (Disabled)	Predeterminado (Desactivado)
+	Zoom timeline	Hacer zoom en la línea de tiempo
+	Step between keyframes	Avanzar/retroceder entre fotogramas clave
+	Scroll horizontally	Desplazar horizontalmente
+	Timeline mouse wheel behavior	Comportamiento de la rueda del ratón en la línea de tiempo
 	Timeline Playback Auto-Scrolling	Desplazamiento automático de la línea de tiempo al reproducir
 	Tint Color	Color del matiz
 	To	Hasta

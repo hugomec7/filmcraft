@@ -2538,6 +2538,31 @@
 	Zoom anchor point	ズームのアンカーポイント
 	Cursor position	カーソル位置
 	Playhead position	再生ヘッドの位置
+	Step playhead (frames)	再生ヘッドをコマ送り（フレーム）
+	Disabled	無効
+	Alt + Scroll	Alt + スクロール
+	Shift + Scroll	Shift + スクロール
+	Ctrl + Scroll	Ctrl + スクロール
+	Ctrl + Shift + Scroll	Ctrl + Shift + スクロール
+	Playhead and Time Ruler	再生ヘッドとタイムルーラー
+	Move playhead on timeline click	タイムラインのクリックで再生ヘッドを移動
+	Ruler only (Premiere Pro)	タイムルーラーのみ（Premiere Pro）
+	Empty space only	空きスペースのみ
+	Anywhere on timeline (Vegas Pro)	タイムライン上のどこでも（Vegas Pro）
+	Drag playhead line across tracks	トラック上で再生ヘッドの線をドラッグ
+	Off (ruler head only)	オフ（ルーラーのヘッドのみ）
+	Empty space only (Premiere Pro)	空きスペースのみ（Premiere Pro）
+	Anywhere, including over clips (Vegas Pro)	クリップ上を含むどこでも（Vegas Pro）
+	Split time ruler: drag upper half to set In/Out range (Vegas Pro)	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定（Vegas Pro）
+	Other Timelines Mouse Wheel	他のタイムラインでのマウスホイール
+	Program Monitor timeline wheel	プログラムモニターのタイムラインホイール
+	Source Monitor timeline wheel	ソースモニターのタイムラインホイール
+	Effect Controls timeline wheel	エフェクトコントロールのタイムラインホイール
+	Default (Disabled)	デフォルト（無効）
+	Zoom timeline	タイムラインをズーム
+	Step between keyframes	キーフレーム間を移動
+	Scroll horizontally	水平方向にスクロール
+	Timeline mouse wheel behavior	タイムラインのマウスホイール動作
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール
 	Tint Color	色合い
 	To	変更先

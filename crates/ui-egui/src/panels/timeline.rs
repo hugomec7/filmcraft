@@ -29,6 +29,8 @@ use filmcraft_engine::settings::ZoomAnchor;
 
 const TOP_H: f32 = 58.0; // timecode + toolbar (left) / ruler (right)
 const RULER_H: f32 = 44.0;
+/// Height of the upper In/Out drag band when the split time ruler option is enabled.
+pub const RULER_SPLIT_OFFSET: f32 = 22.0;
 const SCROLLBAR_H: f32 = 17.0;
 const DIVIDER_H: f32 = 5.0;
 const MASTER_H: f32 = 34.0;
@@ -173,6 +175,11 @@ pub enum Drag {
         individual: bool,
     },
     Divider,
+    /// Dragging in the upper half of the split time ruler to set the sequence In/Out range (Vegas Pro style).
+    RulerInOut {
+        anchor: Tick,
+        current: Tick,
+    },
     ZoomBar {
         /// Where the pointer was pressed, and the view's left edge (seconds) at that moment.
         grab: f32,
@@ -477,10 +484,14 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
             painter.line_segment([pos2(row.min.x, r.rect.min.y + 0.5), pos2(row.max.x, r.rect.min.y + 0.5)], Stroke::new(1.0, t.separator));
         }
     }
-    // in/out shading across tracks
-    if seq.mark_in.is_some() || seq.mark_out.is_some() {
-        let a = layout.x_of(seq.mark_in.unwrap_or(Tick::ZERO)).max(content.min.x);
-        let b = layout.x_of(seq.mark_out.map(|o| o + rate.frame_duration()).unwrap_or(seq.duration())).min(content.max.x);
+    // in/out shading across tracks (including live preview while dragging In/Out on the split ruler)
+    let (mark_in, mark_out) = match app.tl.drag {
+        Some(Drag::RulerInOut { anchor, current }) => (Some(anchor.min(current)), Some(anchor.max(current))),
+        _ => (seq.mark_in, seq.mark_out),
+    };
+    if mark_in.is_some() || mark_out.is_some() {
+        let a = layout.x_of(mark_in.unwrap_or(Tick::ZERO)).max(content.min.x);
+        let b = layout.x_of(mark_out.map(|o| o + rate.frame_duration()).unwrap_or(seq.duration())).min(content.max.x);
         if b > a {
             painter.rect_filled(Rect::from_min_max(pos2(a, content.min.y), pos2(b, content.max.y)), 0.0, t.in_out_shade);
         }
@@ -1534,11 +1545,31 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
     let label_y = ruler.min.y + 24.0;
     let tick_base = ruler.max.y - 3.0;
     let (minor, label_step) = ruler_steps(layout.pps / rate.as_f64(), rate.timecode_base());
-    // In/Out band
-    if seq.mark_in.is_some() || seq.mark_out.is_some() {
-        let a = layout.x_of(seq.mark_in.unwrap_or(Tick::ZERO));
-        let b = layout.x_of(seq.mark_out.map(|o| o + rate.frame_duration()).unwrap_or(seq.duration()));
-        clip.rect_filled(Rect::from_min_max(pos2(a, label_y + 7.0), pos2(b, tick_base)), 0.0, Color32::from_rgb(0x5c, 0x5c, 0x5c));
+    // In/Out band (and split-ruler divider / handles when enabled)
+    let (mark_in, mark_out) = match app.tl.drag {
+        Some(Drag::RulerInOut { anchor, current }) => (Some(anchor.min(current)), Some(anchor.max(current))),
+        _ => (seq.mark_in, seq.mark_out),
+    };
+    let split_ruler = app.session.prefs.timeline.ruler_drag_in_out;
+    let split_line_y = ruler.min.y + RULER_SPLIT_OFFSET;
+    if split_ruler {
+        clip.line_segment(
+            [pos2(ruler.min.x, split_line_y), pos2(ruler.max.x, split_line_y)],
+            Stroke::new(1.0, t.separator.gamma_multiply(0.8)),
+        );
+    }
+    if mark_in.is_some() || mark_out.is_some() {
+        let a = layout.x_of(mark_in.unwrap_or(Tick::ZERO));
+        let b = layout.x_of(mark_out.map(|o| o + rate.frame_duration()).unwrap_or(seq.duration()));
+        let band_top = if split_ruler { ruler.min.y + 2.0 } else { label_y + 7.0 };
+        clip.rect_filled(Rect::from_min_max(pos2(a, band_top), pos2(b, tick_base)), 0.0, Color32::from_rgba_unmultiplied(0x5c, 0x5c, 0x5c, 165));
+        if split_ruler {
+            let col = Color32::from_rgb(0xf0, 0xc8, 0x3c);
+            for (x, dir) in [(a, 1.0_f32), (b, -1.0_f32)] {
+                clip.line_segment([pos2(x, ruler.min.y + 1.0), pos2(x, split_line_y)], Stroke::new(1.5, col));
+                clip.line_segment([pos2(x, ruler.min.y + 1.5), pos2(x + dir * 5.0, ruler.min.y + 1.5)], Stroke::new(1.5, col));
+            }
+        }
     }
     // split points: a short bracket with a V or A tag (video above, audio below)
     let sp = seq.split;
@@ -2230,6 +2261,54 @@ fn scrub_playhead(app: &mut FilmcraftApp, seq: &Sequence, layout: &Layout, p: Po
     app.session.set_playhead(tt);
 }
 
+/// Whether `p` is in the upper half of the time ruler when split-ruler In/Out dragging is on
+/// (and not on a marker pentagon).
+fn in_ruler_inout_band(app: &FilmcraftApp, seq: &Sequence, layout: &Layout, p: Pos2) -> bool {
+    app.session.prefs.timeline.ruler_drag_in_out
+        && layout.ruler.contains(p)
+        && p.y < layout.ruler.min.y + RULER_SPLIT_OFFSET
+        && marker_under_pointer(seq, layout, p).is_none()
+}
+
+/// Whether `p` grabs the vertical playhead line across the tracks (Settings ▸ Timeline ▸
+/// "Drag playhead line across tracks").
+fn on_playhead_line(app: &FilmcraftApp, seq: &Sequence, layout: &Layout, p: Pos2) -> bool {
+    let mode = app.session.prefs.timeline.drag_playhead_line.as_str();
+    if mode == "off" || !layout.content.contains(p) {
+        return false;
+    }
+    let px = layout.x_of(app.session.playhead());
+    if (p.x - px).abs() > 6.0 {
+        return false;
+    }
+    match mode {
+        "anywhere" => true,
+        "emptySpace" => matches!(hit(seq, layout, p), Hit::Empty { .. } | Hit::None),
+        _ => false,
+    }
+}
+
+/// Anchor tick when starting a ruler In/Out drag at `p`: if the pointer is within 6 px of an
+/// existing In or Out mark, the opposite mark stays anchored so the user can resize the range.
+fn ruler_inout_anchor(app: &mut FilmcraftApp, seq: &Sequence, layout: &Layout, p: Pos2, shift: bool) -> (Tick, Tick) {
+    let rate = seq.settings.frame_rate;
+    let mut cur = rate.snap_nearest(layout.tick_at(p.x).max(Tick::ZERO));
+    if shift || app.session.prefs.timeline.snap_playhead {
+        cur = snap_playhead(app, seq, layout, cur);
+    }
+    if let (Some(mi), Some(mo)) = (seq.mark_in, seq.mark_out) {
+        let xi = layout.x_of(mi);
+        let xo = layout.x_of(mo + rate.frame_duration());
+        if (p.x - xi).abs() <= 6.0 {
+            return (mo, cur);
+        }
+        if (p.x - xo).abs() <= 6.0 {
+            return (mi, cur);
+        }
+    }
+    (cur, cur)
+}
+
 fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &Layout, rect: Rect) {
     let ctx = ui.ctx().clone();
     let area = Rect::from_min_max(pos2(layout.content.min.x, layout.ruler.min.y), layout.content.max);
@@ -2251,71 +2330,74 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
     {
         app.tl.cancelled = false;
         let grab = grab_at(seq, layout, p, tool, mods, roll_ripple);
-        // the playhead jumps to a press on the ruler at once, not only once the pointer has moved (#1090)
-        if matches!(grab, Grab::Other(Hit::Ruler)) {
+        // the playhead jumps to a press on the ruler at once, not only once the pointer has moved (#1090),
+        // except in the upper In/Out band of a split ruler (where dragging sets In/Out)
+        if matches!(grab, Grab::Other(Hit::Ruler)) && !in_ruler_inout_band(app, seq, layout, p) {
+            scrub_playhead(app, seq, layout, p, mods.shift);
+        } else if tool == Tool::Selection && on_playhead_line(app, seq, layout, p) {
             scrub_playhead(app, seq, layout, p, mods.shift);
         }
         app.tl.pressed = Some(Pressed { pos: p, tick: layout.tick_at(p.x), grab });
     }
 
-    // ---- wheel, as in Premiere Pro on macOS (checked in 26.5.2):
-    //   wheel            the tracks under the pointer, up and down
-    //   Cmd + wheel      the Timeline, sideways
-    //   Option + wheel   zoom about the pointer
-    // Settings ▸ Timeline ▸ Timeline Mouse Scrolling "Horizontal" swaps the first two. A sideways
-    // gesture (trackpad swipe, tilt wheel, Shift + wheel) always scrolls sideways; a pinch zooms.
-    //
-    // Settings ▸ Timeline ▸ "Scroll to zoom on timeline" gives the wheel over the tracks (the ruler and
-    // the clips, not the track headers) to the zoom and moves the rest onto modifiers:
-    //   wheel                    zoom (over the track headers it still moves the tracks)
-    //   Option / Shift + wheel   the Timeline, sideways
-    //   Cmd / Ctrl + wheel       the tracks, up and down
-    // Every zoom (wheel, Option + wheel, pinch) pivots where "Zoom anchor point" says: on the pointer,
-    // or on the playhead while it is in view.
+    // ---- wheel: configurable per modifier in Settings ▸ Timeline ▸ Timeline Mouse Scrolling
     if ui.rect_contains_pointer(rect)
         && let Some(p) = ctx.pointer_hover_pos()
     {
         let w = wheel_input(&ctx);
-        let (scroll_to_zoom, anchor) = {
-            let t = &app.session.prefs.timeline;
-            (t.scroll_to_zoom, t.zoom_anchor)
-        };
+        let anchor = app.session.prefs.timeline.zoom_anchor;
         let pinching = (w.pinch - 1.0).abs() > 1e-4;
-        // the bare wheel over the tracks, mostly up and down (a sideways swipe still scrolls sideways)
-        let wheel_zooms = scroll_to_zoom && area.contains(p) && !(w.alt || w.shift || w.command) && w.delta.y != 0.0 && w.delta.x.abs() <= w.delta.y.abs();
-        let alt_zooms = !scroll_to_zoom && w.alt && w.delta.y != 0.0;
-        if pinching || alt_zooms || wheel_zooms {
-            let factor = if pinching {
-                w.pinch as f64
-            } else if alt_zooms {
-                (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0)
-            } else {
-                wheel_zoom_factor(w.delta.y as f64)
-            };
-            zoom_timeline(app, layout, p.x, factor, anchor);
+        if pinching {
+            zoom_timeline(app, layout, p.x, w.pinch as f64, anchor);
             ctx.request_repaint();
         } else if w.delta != egui::Vec2::ZERO {
-            // with the wheel on the zoom, Option moves the Timeline sideways (as Shift always does)
-            // and Cmd / Ctrl moves the tracks, so nothing the wheel did is out of reach
-            let wheel_sideways = if scroll_to_zoom { w.alt } else { (app.session.prefs.timeline.mouse_scrolling == "horizontal") != w.command };
-            let sideways = if w.delta.x.abs() > w.delta.y.abs() {
-                Some(w.delta.x)
-            } else if wheel_sideways || w.shift {
-                Some(w.delta.y)
+            let action = if !(w.command || w.alt || w.shift) && w.delta.x.abs() > w.delta.y.abs() {
+                "horizontal".to_string()
+            } else if !(w.command || w.alt || w.shift) && !area.contains(p) {
+                "vertical".to_string()
             } else {
-                None
+                app.session.prefs.timeline.wheel_action(w.command, w.alt, w.shift).to_string()
             };
-            match sideways {
-                Some(d) => {
+            match action.as_str() {
+                "zoom" if w.delta.y != 0.0 => {
+                    let classic_alt = w.alt
+                        && !w.command
+                        && !w.shift
+                        && !app.session.prefs.timeline.scroll_to_zoom
+                        && app.session.prefs.timeline.mouse_scrolling != "zoom";
+                    let factor = if classic_alt {
+                        (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0)
+                    } else {
+                        wheel_zoom_factor(w.delta.y as f64)
+                    };
+                    zoom_timeline(app, layout, p.x, factor, anchor);
+                    ctx.request_repaint();
+                }
+                "horizontal" => {
+                    let d = if w.delta.x.abs() > w.delta.y.abs() { w.delta.x } else { w.delta.y };
                     let v = &mut app.ui.timeline;
                     let limit = max_scroll(seq.duration().seconds(), layout.content.width(), v.pps);
                     v.target_scroll = (v.target_scroll - d as f64 / v.pps).clamp(0.0, limit);
                     v.scroll = v.target_scroll;
                 }
-                // up and down: the video tracks above the divider, the audio tracks below it (the
-                // lowest video track is at the bottom, so wheeling up brings higher ones in)
-                None if p.y < layout.split_y => app.ui.timeline.v_scroll += w.delta.y,
-                None => app.ui.timeline.a_scroll -= w.delta.y,
+                "vertical" => {
+                    if p.y < layout.split_y {
+                        app.ui.timeline.v_scroll += w.delta.y;
+                    } else {
+                        app.ui.timeline.a_scroll -= w.delta.y;
+                    }
+                }
+                "step" => {
+                    let d = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
+                    if d != 0.0 {
+                        let notches = ((-d / 40.0).round() as i64).clamp(-10, 10);
+                        let step = if notches != 0 { notches } else if d < 0.0 { 1 } else { -1 };
+                        let next = (app.session.playhead() + Tick(rate.frame_duration().0.saturating_mul(step))).max(Tick::ZERO);
+                        app.stop();
+                        app.session.set_playhead(next);
+                    }
+                }
+                _ => {}
             }
         }
     }
@@ -2326,7 +2408,10 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         && area.contains(p)
     {
         let g = grab_at(seq, layout, p, tool, mods, roll_ripple);
-        let blocked = tool == Tool::Selection
+        let on_ph_line = tool == Tool::Selection && on_playhead_line(app, seq, layout, p);
+        let on_inout_band = in_ruler_inout_band(app, seq, layout, p);
+        let blocked = !on_ph_line
+            && tool == Tool::Selection
             && match g.hit() {
                 Hit::Clip { clip, .. } => {
                     let clips = if app.session.state.selection.contains(&clip) {
@@ -2340,7 +2425,9 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 _ => false,
             };
-        let cur = if blocked {
+        let cur = if on_ph_line || on_inout_band {
+            CursorIcon::ResizeHorizontal
+        } else if blocked {
             CursorIcon::NotAllowed
         } else {
             match (tool, g) {
@@ -2397,7 +2484,20 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 let last = ctx.input(|i| i.pointer.press_origin()).unwrap_or(p);
                 Some(Drag::Pan { last, start_scroll: app.ui.timeline.target_scroll, start_v: app.ui.timeline.v_scroll })
             }
-            (_, Grab::Other(Hit::Ruler)) => Some(Drag::Scrub { initial: app.session.playhead() }),
+            (Tool::Selection, _) if on_playhead_line(app, seq, layout, p) => Some(Drag::Scrub { initial: app.session.playhead() }),
+            (_, Grab::Other(Hit::Ruler)) => {
+                if in_ruler_inout_band(app, seq, layout, p) {
+                    if resp.drag_started() {
+                        let (anchor, current) = ruler_inout_anchor(app, seq, layout, p, mods.shift);
+                        Some(Drag::RulerInOut { anchor, current })
+                    } else {
+                        scrub_playhead(app, seq, layout, p, mods.shift);
+                        None
+                    }
+                } else {
+                    Some(Drag::Scrub { initial: app.session.playhead() })
+                }
+            }
             (Tool::Hand, _) => Some(Drag::Pan { last: p, start_scroll: app.ui.timeline.target_scroll, start_v: app.ui.timeline.v_scroll }),
             (Tool::Zoom, _) => {
                 if resp.clicked() {
@@ -2483,39 +2583,56 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (Tool::Slip, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slip { clip, delta: Tick::ZERO }),
             (Tool::Slide, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slide { clip, delta: Tick::ZERO }),
             (_, Grab::Other(Hit::Clip { clip, track, .. })) => {
-                // select (shift toggles; alt selects one side of a link)
-                let sel = &app.session.state.selection;
-                if mods.shift {
-                    let _ = app.session.execute("timeline.select", json!({"clips": [clip.0], "toggle": true}));
-                } else if !sel.contains(&clip) {
-                    if mods.alt {
-                        app.session.state.selection = vec![clip];
-                        app.session.state.transition_selection.clear();
-                    } else {
-                        let _ = app.session.execute("timeline.select", json!({"clips": [clip.0]}));
-                    }
-                }
-                if resp.drag_started() {
-                    let clips = app.session.state.selection.clone();
-                    Some(Drag::Move { clips, grab_tick: t, start_track: track, offset: Tick::ZERO, track_delta: 0, new_track: None, copy: mods.alt })
-                } else {
+                if resp.clicked()
+                    && app.session.prefs.timeline.click_to_move_playhead == "anywhere"
+                    && !(mods.shift || mods.alt || mods.command)
+                {
+                    scrub_playhead(app, seq, layout, p, false);
                     None
+                } else {
+                    // select (shift toggles; alt selects one side of a link)
+                    let sel = &app.session.state.selection;
+                    if mods.shift {
+                        let _ = app.session.execute("timeline.select", json!({"clips": [clip.0], "toggle": true}));
+                    } else if !sel.contains(&clip) {
+                        if mods.alt {
+                            app.session.state.selection = vec![clip];
+                            app.session.state.transition_selection.clear();
+                        } else {
+                            let _ = app.session.execute("timeline.select", json!({"clips": [clip.0]}));
+                        }
+                    }
+                    if resp.drag_started() {
+                        let clips = app.session.state.selection.clone();
+                        Some(Drag::Move { clips, grab_tick: t, start_track: track, offset: Tick::ZERO, track_delta: 0, new_track: None, copy: mods.alt })
+                    } else {
+                        None
+                    }
                 }
             }
             // click a transition to select it (Shift adds / removes); drag an end to change its
             // duration or its middle to slide it over the cut (#430, #224)
             (Tool::Selection, Grab::Other(Hit::Transition { id, edge, .. })) => {
-                // a drag of a selected transition (Shift too) moves it rather than toggling it out first
-                if !(app.session.state.transition_selection.contains(&id) && resp.drag_started()) {
-                    let r = app.session.execute("timeline.select", json!({"transitions": [id.0], "toggle": mods.shift}));
-                    if let Err(e) = r {
-                        app.ui.status = e.to_string();
+                if resp.clicked()
+                    && edge.is_none()
+                    && app.session.prefs.timeline.click_to_move_playhead == "anywhere"
+                    && !(mods.shift || mods.alt || mods.command)
+                {
+                    scrub_playhead(app, seq, layout, p, false);
+                    None
+                } else {
+                    // a drag of a selected transition (Shift too) moves it rather than toggling it out first
+                    if !(app.session.state.transition_selection.contains(&id) && resp.drag_started()) {
+                        let r = app.session.execute("timeline.select", json!({"transitions": [id.0], "toggle": mods.shift}));
+                        if let Err(e) = r {
+                            app.ui.status = e.to_string();
+                        }
                     }
-                }
-                let span = seq.all_tracks().find_map(|tr| tr.transitions.iter().find(|x| x.id == id)).map(|x| (x.start, x.duration));
-                match span {
-                    Some((start, duration)) if resp.drag_started() => Some(Drag::Transition { id, edge, from: t, start, duration }),
-                    _ => None,
+                    let span = seq.all_tracks().find_map(|tr| tr.transitions.iter().find(|x| x.id == id)).map(|x| (x.start, x.duration));
+                    match span {
+                        Some((start, duration)) if resp.drag_started() => Some(Drag::Transition { id, edge, from: t, start, duration }),
+                        _ => None,
+                    }
                 }
             }
             (_, Grab::Other(Hit::Transition { .. })) => None,
@@ -2524,7 +2641,13 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (_, Grab::Other(hit @ (Hit::Empty { .. } | Hit::None))) if layout.content.contains(p) => {
                 if resp.drag_started() {
                     Some(Drag::Marquee { start: p, before: app.session.state.selection.clone(), add: mods.shift || mods.command, individual: mods.alt })
+                } else if app.session.prefs.timeline.click_to_move_playhead == "anywhere" && !(mods.shift || mods.alt || mods.command) {
+                    scrub_playhead(app, seq, layout, p, false);
+                    None
                 } else {
+                    if app.session.prefs.timeline.click_to_move_playhead == "emptySpace" {
+                        scrub_playhead(app, seq, layout, p, mods.shift);
+                    }
                     app.session.state.selection.clear();
                     app.session.state.edit_points.clear();
                     app.session.state.transition_selection.clear();
@@ -2596,6 +2719,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         let t_here = layout.tick_at(p.x);
         let new = match d {
             Drag::Scrub { initial } => {
+                ctx.set_cursor_icon(CursorIcon::ResizeHorizontal);
                 let mut tt = rate.snap_nearest(t_here.max(Tick::ZERO));
                 // Shift snaps; Settings ▸ Timeline ▸ "Snap playhead in Timeline when Snap is enabled"
                 if mods.shift || app.session.prefs.timeline.snap_playhead {
@@ -2603,6 +2727,14 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 app.session.set_playhead(tt);
                 Some(Drag::Scrub { initial })
+            }
+            Drag::RulerInOut { anchor, .. } => {
+                ctx.set_cursor_icon(CursorIcon::ResizeHorizontal);
+                let mut tt = rate.snap_nearest(t_here.max(Tick::ZERO));
+                if mods.shift || app.session.prefs.timeline.snap_playhead {
+                    tt = snap_playhead(app, seq, layout, tt);
+                }
+                Some(Drag::RulerInOut { anchor, current: tt })
             }
             Drag::Pan { last, start_scroll, start_v } => {
                 let dx = p.x - last.x;
@@ -2749,6 +2881,14 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                     let moved = seq.all_tracks().find_map(|tr| tr.transitions.iter().find(|x| x.id == id)).is_some_and(|x| (x.start, x.duration) != (start, duration));
                     moved.then(|| app.session.execute("sequence.setTransition", json!({"transition": id.0, "start": start.0, "duration": duration.0})))
                 }
+                Drag::RulerInOut { anchor, current } => {
+                    if let Some(seq_id) = app.session.state.active_sequence {
+                        let (start, end) = (anchor.min(current), anchor.max(current));
+                        Some(app.session.execute("project.setMarks", json!({"item": seq_id.0, "in": start.0, "out": end.0})))
+                    } else {
+                        None
+                    }
+                }
                 Drag::Marquee { start, before, add, individual } => {
                     app.session.state.selection = before;
                     // egui ends a drag on Escape: that cancels the box, as in the Project panel
@@ -2768,6 +2908,14 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         } else {
             app.tl.drag = None;
         }
+    }
+
+    // ---- double-click the upper In/Out ruler band: clear In and Out marks (Vegas Pro)
+    if resp.double_clicked()
+        && let Some(p) = resp.interact_pointer_pos()
+        && in_ruler_inout_band(app, seq, layout, p)
+    {
+        let _ = app.session.execute("markers.clearInOut", json!({}));
     }
 
     // ---- double-click a transition: Set Transition Duration (Premiere)
