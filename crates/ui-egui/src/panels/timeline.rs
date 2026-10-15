@@ -24,6 +24,8 @@ use crate::theme::Tokens;
 
 use super::timeline_hit::{EdgeKind, Grab, edge_geometry, grab_at, marker_at, marker_range_rect, marker_rect, marker_under_pointer};
 pub use super::timeline_hit::{Hit, ROLL_PX, hit, selection_trim_kind};
+use super::timeline_zoom::{MAX_PPS, MIN_PPS, Scale, pivot_x, wheel_zoom_factor, zoom_at_cursor};
+use filmcraft_engine::settings::ZoomAnchor;
 
 const TOP_H: f32 = 58.0; // timecode + toolbar (left) / ruler (right)
 const RULER_H: f32 = 44.0;
@@ -284,10 +286,24 @@ pub(crate) fn reveal_playhead(app: &mut FilmcraftApp, ctx: &egui::Context) {
     }
 }
 
+/// Zoom the Timeline by `factor` about the pointer at `pointer_x` (screen x), or about the playhead
+/// when `anchor` says so and it is in view: the time under the pivot stays under the same screen x
+/// while the zoom animates (see `TlState::zoom_anchor`).
+fn zoom_timeline(app: &mut FilmcraftApp, layout: &Layout, pointer_x: f32, factor: f64, anchor: ZoomAnchor) {
+    let left = layout.content.min.x;
+    let playhead_x = (anchor == ZoomAnchor::Playhead).then(|| f64::from(layout.x_of(app.session.playhead()) - left));
+    let local = pivot_x(f64::from(pointer_x - left), playhead_x, f64::from(layout.content.width()));
+    let v = &mut app.ui.timeline;
+    let z = zoom_at_cursor(Scale { pps: layout.pps, scroll: layout.scroll }, v.target_pps, local, factor, MIN_PPS, MAX_PPS);
+    v.target_pps = z.pps;
+    v.target_scroll = z.scroll;
+    app.tl.zoom_anchor = Some((z.anchor_time, left + local as f32));
+}
+
 /// Zoom about a time (keeps it under the same screen x).
 pub fn zoom_about(v: &mut TimelineView, factor: f64, anchor_secs: f64, width: f32) {
     let old = v.target_pps;
-    let new = (old * factor).clamp(0.05, 24_000.0);
+    let new = (old * factor).clamp(MIN_PPS, MAX_PPS);
     let x = ((anchor_secs - v.target_scroll) * old) as f32;
     let x = if (0.0..=width).contains(&x) { x } else { width / 2.0 };
     v.target_pps = new;
@@ -335,7 +351,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
             v.fit_empty = None;
         }
         if v.fit_pending && content.width() > 50.0 {
-            v.target_pps = (content.width() as f64 * 0.94 / dur_s).clamp(0.05, 24_000.0);
+            v.target_pps = (content.width() as f64 * 0.94 / dur_s).clamp(MIN_PPS, MAX_PPS);
             v.target_scroll = 0.0;
             v.fit_pending = false;
             v.fit_empty = empty.then_some(v.target_pps);
@@ -1698,12 +1714,12 @@ fn zoom_scrollbar(app: &mut FilmcraftApp, ui: &mut egui::Ui, bar: Rect, seq_seco
                 if mode == 1 {
                     let end = v.scroll + vis;
                     let ns = (v.scroll + dx).clamp(0.0, (end - 0.05).max(0.0));
-                    v.pps = (bar.width() as f64 / (end - ns).max(0.05)).clamp(0.05, 24_000.0);
+                    v.pps = (bar.width() as f64 / (end - ns).max(0.05)).clamp(MIN_PPS, MAX_PPS);
                     v.scroll = ns;
                     v.target_scroll = ns;
                 } else {
                     let ne = (v.scroll + vis + dx).max(v.scroll + 0.05);
-                    v.pps = (bar.width() as f64 / (ne - v.scroll)).clamp(0.05, 24_000.0);
+                    v.pps = (bar.width() as f64 / (ne - v.scroll)).clamp(MIN_PPS, MAX_PPS);
                 }
                 v.target_pps = v.pps;
             }
@@ -2248,18 +2264,40 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
     //   Option + wheel   zoom about the pointer
     // Settings ▸ Timeline ▸ Timeline Mouse Scrolling "Horizontal" swaps the first two. A sideways
     // gesture (trackpad swipe, tilt wheel, Shift + wheel) always scrolls sideways; a pinch zooms.
+    //
+    // Settings ▸ Timeline ▸ "Scroll to zoom on timeline" gives the wheel over the tracks (the ruler and
+    // the clips, not the track headers) to the zoom and moves the rest onto modifiers:
+    //   wheel                    zoom (over the track headers it still moves the tracks)
+    //   Option / Shift + wheel   the Timeline, sideways
+    //   Cmd / Ctrl + wheel       the tracks, up and down
+    // Every zoom (wheel, Option + wheel, pinch) pivots where "Zoom anchor point" says: on the pointer,
+    // or on the playhead while it is in view.
     if ui.rect_contains_pointer(rect)
         && let Some(p) = ctx.pointer_hover_pos()
     {
         let w = wheel_input(&ctx);
-        if (w.pinch - 1.0).abs() > 1e-4 || (w.alt && w.delta.y != 0.0) {
-            let f = if (w.pinch - 1.0).abs() > 1e-4 { w.pinch as f64 } else { (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0) };
-            let anchor_t = layout.tick_at(p.x).seconds();
-            let v = &mut app.ui.timeline;
-            v.target_pps = (v.target_pps * f).clamp(0.05, 24_000.0);
-            app.tl.zoom_anchor = Some((anchor_t, p.x));
+        let (scroll_to_zoom, anchor) = {
+            let t = &app.session.prefs.timeline;
+            (t.scroll_to_zoom, t.zoom_anchor)
+        };
+        let pinching = (w.pinch - 1.0).abs() > 1e-4;
+        // the bare wheel over the tracks, mostly up and down (a sideways swipe still scrolls sideways)
+        let wheel_zooms = scroll_to_zoom && area.contains(p) && !(w.alt || w.shift || w.command) && w.delta.y != 0.0 && w.delta.x.abs() <= w.delta.y.abs();
+        let alt_zooms = !scroll_to_zoom && w.alt && w.delta.y != 0.0;
+        if pinching || alt_zooms || wheel_zooms {
+            let factor = if pinching {
+                w.pinch as f64
+            } else if alt_zooms {
+                (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0)
+            } else {
+                wheel_zoom_factor(w.delta.y as f64)
+            };
+            zoom_timeline(app, layout, p.x, factor, anchor);
+            ctx.request_repaint();
         } else if w.delta != egui::Vec2::ZERO {
-            let wheel_sideways = (app.session.prefs.timeline.mouse_scrolling == "horizontal") != w.command;
+            // with the wheel on the zoom, Option moves the Timeline sideways (as Shift always does)
+            // and Cmd / Ctrl moves the tracks, so nothing the wheel did is out of reach
+            let wheel_sideways = if scroll_to_zoom { w.alt } else { (app.session.prefs.timeline.mouse_scrolling == "horizontal") != w.command };
             let sideways = if w.delta.x.abs() > w.delta.y.abs() {
                 Some(w.delta.x)
             } else if wheel_sideways || w.shift {
@@ -2364,7 +2402,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (Tool::Zoom, _) => {
                 if resp.clicked() {
                     let f = if mods.alt { 1.0 / 2.0 } else { 2.0 };
-                    app.ui.timeline.target_pps = (app.ui.timeline.target_pps * f).clamp(0.05, 24_000.0);
+                    app.ui.timeline.target_pps = (app.ui.timeline.target_pps * f).clamp(MIN_PPS, MAX_PPS);
                     app.tl.zoom_anchor = Some((t.seconds(), p.x));
                 }
                 None
