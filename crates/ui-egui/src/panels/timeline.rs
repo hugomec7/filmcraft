@@ -484,7 +484,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
         painter.rect_filled(row, 0.0, bg);
         painter.line_segment([pos2(row.min.x, r.rect.max.y - 0.5), pos2(row.max.x, r.rect.max.y - 0.5)], Stroke::new(1.0, t.separator));
         // the top video track also gets a line above it
-        if r.kind == TrackKind::Video && r.index + 1 == nv {
+        if r.kind == TrackKind::Video && r.index + 1 == seq.video_tracks.len() {
             painter.line_segment([pos2(row.min.x, r.rect.min.y + 0.5), pos2(row.max.x, r.rect.min.y + 0.5)], Stroke::new(1.0, t.separator));
         }
     }
