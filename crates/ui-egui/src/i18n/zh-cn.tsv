@@ -3585,38 +3585,30 @@
 	Shows the version, community links and credits in a FilmCraft window.	在 FilmCraft 窗口中显示版本、社区链接和致谢。
 	Couldn't open your web browser	无法打开网页浏览器
 	Open this address in your browser yourself:	请自行在浏览器中打开此地址：
-	Step playhead (frames)	步进播放头（帧）
+	Step Playhead (Frames)	步进播放头（帧）
 	Disabled	禁用
 	Alt + Scroll	Alt + 滚轮
 	Shift + Scroll	Shift + 滚轮
 	Ctrl + Scroll	Ctrl + 滚轮
 	Ctrl + Shift + Scroll	Ctrl + Shift + 滚轮
 	Playhead and Time Ruler	播放头与时间标尺
-	Move playhead on timeline click	点击时间轴时移动播放头
-	Ruler only (Classic)	仅时间标尺（经典）
-	Empty space only	仅空白区域
-	Anywhere on timeline	时间轴任意位置
-	Drag playhead line across tracks	在轨道上拖动播放头线
-	Anywhere, including over clips	任意位置，包括片段上方
-	Split time ruler: drag upper half to set In/Out range	分割时间标尺：拖动上半部分设置入点/出点范围
+	Move Playhead on Timeline Click	点击时间轴时移动播放头
+	Ruler Only	仅时间标尺
+	Empty Space Only	仅空白区域
+	Anywhere on Timeline	时间轴任意位置
+	Drag Playhead Line Across Tracks	在轨道上拖动播放头线
+	Anywhere, Including Over Clips	任意位置，包括片段上方
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	分割时间标尺：拖动上半部分设置入点/出点范围
 	Other Timelines Mouse Wheel	其他时间轴鼠标滚轮
-	Program Monitor timeline wheel	节目监视器时间轴滚轮
-	Source Monitor timeline wheel	源监视器时间轴滚轮
-	Effect Controls timeline wheel	效果控件时间轴滚轮
-	Timeline mouse wheel behavior	时间轴鼠标滚轮行为
-	Resize all tracks	调整所有轨道大小
-	Resize one track	调整单个轨道大小
-	Resize all tracks (Classic)	调整所有轨道大小（经典）
-	Resize one track (Classic)	调整单个轨道大小（经典）
-	Step frames	逐帧移动
-	Step keyframes	逐关键帧移动
-	Scroll	滚动
-	Empty space only (Classic)	仅空白区域（经典）
-	Off (ruler head only)	关闭（仅标尺磁头）
+	Program Monitor Timeline Wheel	节目监视器时间轴滚轮
+	Source Monitor Timeline Wheel	源监视器时间轴滚轮
+	Effect Controls Timeline Wheel	效果控件时间轴滚轮
+	Timeline Mouse Wheel Behavior	时间轴鼠标滚轮行为
+	Zoom, or Resize One Track Over Headers	缩放（在轨道头部上调整单个轨道大小）
+	Resize All Tracks	调整所有轨道大小
+	Resize One Track	调整单个轨道大小
+	Step Frames	逐帧移动
+	Step Keyframes	逐关键帧移动
+	Off (Ruler Head Only)	关闭（仅标尺磁头）
 	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + 滚动
-	Alt + Scroll over track headers	轨道头部上的 Alt + 滚动
-	Vertical (Classic)	垂直（经典）
-	Horizontal (Classic)	水平（经典）
-	Zoom (Classic)	缩放（经典）
-	Pan the Timeline by dragging with the middle mouse button	按住鼠标中键拖动以平移时间轴
-	Disabled (Classic)	已禁用（经典）
+	Pan Timeline by Dragging With Middle Mouse Button	按住鼠标中键拖动以平移时间轴

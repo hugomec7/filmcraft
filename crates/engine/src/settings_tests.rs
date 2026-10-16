@@ -722,10 +722,10 @@ fn scroll_to_zoom_and_zoom_anchor_are_in_the_settings_registry() {
     let (cat, f) = settings::fields().into_iter().find(|(_, f)| f.key == "timeline.zoomAnchor").expect("registry field");
     assert_eq!(cat, "timeline");
     assert!(f.wired);
-    assert_eq!(f.label, "Zoom anchor point");
+    assert_eq!(f.label, "Zoom Anchor Point");
     let Kind::Choice(opts) = f.kind else { panic!("the anchor is a choice") };
     assert_eq!(opts.iter().map(|o| o.0).collect::<Vec<_>>(), ["cursor", "playhead"]);
-    assert_eq!(opts.iter().map(|o| o.1).collect::<Vec<_>>(), ["Cursor position", "Playhead position"]);
+    assert_eq!(opts.iter().map(|o| o.1).collect::<Vec<_>>(), ["Cursor Position", "Playhead Position"]);
     for (value, _) in opts {
         assert!(serde_json::from_value::<ZoomAnchor>(json!(value)).is_ok(), "{value} is not an anchor");
     }
@@ -962,10 +962,11 @@ fn builtin_label_presets_are_complete_and_distinct() {
 fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     let p = settings::TimelinePrefs::default();
     assert_eq!(p.mouse_scrolling, "vertical");
-    assert_eq!(p.alt_scrolling, "zoom");
+    assert_eq!(p.alt_scrolling, "auto");
     assert_eq!(p.shift_scrolling, "horizontal");
     assert_eq!(p.ctrl_scrolling, "horizontal");
-    assert_eq!(p.ctrl_shift_scrolling, "vertical");
+    assert_eq!(p.ctrl_shift_scrolling, "trackHeightAll");
+    assert_eq!(p.ctrl_shift_alt_scrolling, "off");
     assert_eq!(p.click_to_move_playhead, "rulerOnly");
     assert_eq!(p.drag_playhead_line, "emptySpace");
     assert!(!p.ruler_drag_in_out);
@@ -976,7 +977,7 @@ fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     assert_eq!(p.wheel_action(false, true, false), "zoom");
     assert_eq!(p.wheel_action(false, false, true), "horizontal");
     assert_eq!(p.wheel_action(true, false, false), "horizontal");
-    assert_eq!(p.wheel_action(true, false, true), "vertical");
+    assert_eq!(p.wheel_action(true, false, true), "trackHeightAll");
 
     let mut s = Session::default();
     set(&mut s, "timeline.mouseScrolling", json!("zoom"));
@@ -1019,38 +1020,41 @@ fn timeline_wheel_can_resize_tracks_and_the_middle_button_pan_can_be_turned_off(
     let back = Preferences::from_value(s.prefs.to_value());
     assert_eq!(back.timeline.ctrl_shift_scrolling, "trackHeightAll");
     assert!(!back.timeline.middle_button_pan);
-    // the classic defaults: Ctrl + Shift + Alt over the tracks resizes all of them, Alt over the headers one
+    // by default Alt + wheel zooms over the clips and resizes the track under the pointer over the headers,
+    // Ctrl + Shift + wheel resizes all tracks of the half under the pointer, Ctrl + Shift + Alt does nothing
     let classic = settings::TimelinePrefs::default();
-    assert_eq!(classic.wheel_action_at(true, true, true, false), "trackHeightAll");
+    assert_eq!(classic.wheel_action_at(false, true, false, false), "zoom");
     assert_eq!(classic.wheel_action_at(false, true, false, true), "trackHeightOne");
-    assert_eq!(classic.wheel_action_at(false, true, false, false), "zoom", "Alt over the clips still zooms");
+    assert_eq!(classic.wheel_action_at(true, false, true, false), "trackHeightAll");
+    assert_eq!(classic.wheel_action_at(true, true, true, false), "off");
     // an unknown action is refused
     assert!(s.execute("prefs.set", json!({"key": "timeline.ctrlShiftScrolling", "value": "resizeEverything"})).is_err());
 }
 
 #[test]
-fn timeline_choice_labels_name_no_other_product_and_mark_the_classic_defaults() {
+fn timeline_labels_name_no_other_product_and_use_title_case() {
+    let small = ["a", "an", "and", "as", "at", "by", "for", "in", "of", "on", "or", "the", "to", "with", "over"];
+    let title_case = |label: &str| {
+        label.split(' ').enumerate().all(|(i, w)| {
+            let w = w.trim_matches(|c: char| !c.is_alphanumeric());
+            w.is_empty() || !w.chars().next().is_some_and(char::is_lowercase) || (i > 0 && small.contains(&w))
+        })
+    };
     for (_, f) in settings::fields().into_iter().filter(|(_, f)| f.key.starts_with("timeline.")) {
-        assert!(!f.label.contains("Premiere") && !f.label.contains("Vegas"), "{}", f.label);
+        assert!(!f.label.contains("Premiere") && !f.label.contains("Vegas") && !f.label.contains("Classic"), "{}", f.label);
+        if ["scrollToZoom"].iter().any(|k| f.key.ends_with(k)) {
+            continue; // the old option, no longer drawn
+        }
         if let Kind::Choice(opts) = f.kind {
             for (_, label) in opts {
-                assert!(!label.contains("Premiere") && !label.contains("Vegas"), "{label}");
+                assert!(!label.contains("Premiere") && !label.contains("Vegas") && !label.contains("Classic"), "{label}");
             }
         }
     }
-    // each wheel row marks the option that is the shipped default
-    let p = settings::TimelinePrefs::default();
-    for (key, default) in [
-        ("timeline.mouseScrolling", p.mouse_scrolling.as_str()),
-        ("timeline.altScrolling", p.alt_scrolling.as_str()),
-        ("timeline.shiftScrolling", p.shift_scrolling.as_str()),
-        ("timeline.ctrlScrolling", p.ctrl_scrolling.as_str()),
-        ("timeline.ctrlShiftScrolling", p.ctrl_shift_scrolling.as_str()),
-        ("timeline.ctrlShiftAltScrolling", p.ctrl_shift_alt_scrolling.as_str()),
-        ("timeline.headerAltScrolling", p.header_alt_scrolling.as_str()),
-    ] {
+    for key in ["timeline.mouseScrolling", "timeline.altScrolling", "timeline.clickToMovePlayhead", "timeline.dragPlayheadLine", "timeline.programWheel"] {
         let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
-        let marked: Vec<&str> = opts.iter().filter(|(_, l)| l.contains("(Classic)")).map(|(v, _)| *v).collect();
-        assert_eq!(marked, vec![default], "{key}");
+        for (_, label) in opts {
+            assert!(title_case(label), "{key}: {label}");
+        }
     }
 }

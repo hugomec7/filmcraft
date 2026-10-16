@@ -2549,44 +2549,36 @@
 	Timecode Conversion	Conversión de código de tiempo
 	Timeline Mouse Scrolling	Desplazamiento con el ratón en la línea de tiempo
 	Scroll to zoom on timeline	Usar la rueda del ratón para hacer zoom en la línea de tiempo
-	Zoom anchor point	Punto de anclaje del zoom
-	Cursor position	Posición del cursor
-	Playhead position	Posición del cabezal
-	Step playhead (frames)	Avanzar/retroceder cabezal (fotogramas)
+	Zoom Anchor Point	Punto de anclaje del zoom
+	Cursor Position	Posición del cursor
+	Playhead Position	Posición del cabezal
+	Step Playhead (Frames)	Avanzar/retroceder cabezal (fotogramas)
 	Disabled	Desactivado
 	Alt + Scroll	Alt + Rueda
 	Shift + Scroll	Mayús + Rueda
 	Ctrl + Scroll	Ctrl + Rueda
 	Ctrl + Shift + Scroll	Ctrl + Mayús + Rueda
 	Playhead and Time Ruler	Cabezal de reproducción y regla de tiempo
-	Move playhead on timeline click	Mover el cabezal al hacer clic en la línea de tiempo
-	Ruler only (Classic)	Solo en la regla de tiempo (Clásico)
-	Empty space only	Solo en espacios vacíos
-	Anywhere on timeline	En cualquier lugar de la línea de tiempo
-	Drag playhead line across tracks	Arrastrar la línea del cabezal sobre las pistas
-	Anywhere, including over clips	En cualquier lugar, incluso sobre clips
-	Split time ruler: drag upper half to set In/Out range	Dividir regla de tiempo: arrastrar en la mitad superior define Entrada/Salida
+	Move Playhead on Timeline Click	Mover el cabezal al hacer clic en la línea de tiempo
+	Ruler Only	Solo en la regla de tiempo
+	Empty Space Only	Solo en espacios vacíos
+	Anywhere on Timeline	En cualquier lugar de la línea de tiempo
+	Drag Playhead Line Across Tracks	Arrastrar la línea del cabezal sobre las pistas
+	Anywhere, Including Over Clips	En cualquier lugar, incluso sobre clips
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir regla de tiempo: arrastrar en la mitad superior define Entrada/Salida
 	Other Timelines Mouse Wheel	Rueda del ratón en otras líneas de tiempo
-	Program Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de programa
-	Source Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de origen
-	Effect Controls timeline wheel	Rueda en la línea de tiempo de Controles de efectos
-	Timeline mouse wheel behavior	Comportamiento de la rueda del ratón en la línea de tiempo
-	Resize all tracks	Cambiar el tamaño de todas las pistas
-	Resize one track	Cambiar el tamaño de una pista
-	Resize all tracks (Classic)	Cambiar el tamaño de todas las pistas (Clásico)
-	Resize one track (Classic)	Cambiar el tamaño de una pista (Clásico)
-	Step frames	Avanzar fotogramas
-	Step keyframes	Saltar fotogramas clave
-	Scroll	Desplazar
-	Empty space only (Classic)	Solo en espacios vacíos (Clásico)
-	Off (ruler head only)	Desactivado (solo por la cabeza en la regla)
+	Program Monitor Timeline Wheel	Rueda en la línea de tiempo del Monitor de programa
+	Source Monitor Timeline Wheel	Rueda en la línea de tiempo del Monitor de origen
+	Effect Controls Timeline Wheel	Rueda en la línea de tiempo de Controles de efectos
+	Timeline Mouse Wheel Behavior	Comportamiento de la rueda del ratón en la línea de tiempo
+	Zoom, or Resize One Track Over Headers	Zoom, o cambiar el tamaño de una pista sobre las cabeceras
+	Resize All Tracks	Cambiar el tamaño de todas las pistas
+	Resize One Track	Cambiar el tamaño de una pista
+	Step Frames	Avanzar fotogramas
+	Step Keyframes	Saltar fotogramas clave
+	Off (Ruler Head Only)	Desactivado (solo por la cabeza en la regla)
 	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + Scroll
-	Alt + Scroll over track headers	Alt + Scroll sobre las cabeceras de pista
-	Vertical (Classic)	Vertical (Clásico)
-	Horizontal (Classic)	Horizontal (Clásico)
-	Zoom (Classic)	Zoom (Clásico)
-	Pan the Timeline by dragging with the middle mouse button	Desplazar la línea de tiempo arrastrando con el botón central del ratón
-	Disabled (Classic)	Desactivado (Clásico)
+	Pan Timeline by Dragging With Middle Mouse Button	Desplazar la línea de tiempo arrastrando con el botón central del ratón
 	Timeline Playback Auto-Scrolling	Desplazamiento automático de la línea de tiempo al reproducir
 	Tint Color	Color del matiz
 	To	Hasta

@@ -455,7 +455,6 @@ fn repeated_start_and_end_commands_reveal_a_playhead_already_at_the_endpoint() {
 #[test]
 fn the_wheel_can_resize_all_video_or_all_audio_tracks_by_the_pointer() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.ctrl_shift_scrolling = "trackHeightAll".into();
     let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
     let both = json!({"command": true, "shift": true});
     d.wheel(0.2, 0.0, 40.0, both.clone());
@@ -485,16 +484,18 @@ fn the_wheel_can_resize_only_the_track_under_the_pointer() {
     assert!(tv.track_h_override.values().all(|h| *h > v0));
 }
 
-/// Classic default: Ctrl + Shift + Alt + wheel over the tracks resizes all video tracks, or all audio
-/// tracks, depending on the half the pointer is in.
+/// Default: Ctrl + Shift + wheel over the tracks resizes all video tracks, or all audio tracks,
+/// depending on the half the pointer is in; Ctrl + Shift + Alt + wheel does nothing.
 #[test]
-fn ctrl_shift_alt_wheel_resizes_all_tracks_of_the_half_under_the_pointer_by_default() {
+fn ctrl_shift_wheel_resizes_all_tracks_of_the_half_under_the_pointer_by_default() {
     let mut d = Driver::tall();
     let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
-    let all = json!({"command": true, "shift": true, "alt": true});
-    d.wheel(0.2, 0.0, 40.0, all.clone());
+    d.wheel(0.2, 0.0, 40.0, json!({"command": true, "shift": true, "alt": true}));
+    assert_eq!((d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h), (v0, a0), "Ctrl + Shift + Alt does nothing");
+    let both = json!({"command": true, "shift": true});
+    d.wheel(0.2, 0.0, 40.0, both.clone());
     let (v1, a1) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
     assert!(v1 > v0 && a1 == a0, "video tracks taller, audio untouched: {v0} -> {v1}, {a0} -> {a1}");
-    d.wheel(0.8, 0.0, 40.0, all);
+    d.wheel(0.8, 0.0, 40.0, both);
     assert!(d.app().ui.timeline.audio_track_h > a1);
 }

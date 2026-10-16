@@ -2535,44 +2535,36 @@
 	Timecode Conversion	タイムコード変換
 	Timeline Mouse Scrolling	タイムラインのマウススクロール
 	Scroll to zoom on timeline	マウスホイールでタイムラインをズーム
-	Zoom anchor point	ズームのアンカーポイント
-	Cursor position	カーソル位置
-	Playhead position	再生ヘッドの位置
-	Step playhead (frames)	再生ヘッドをコマ送り（フレーム）
+	Zoom Anchor Point	ズームのアンカーポイント
+	Cursor Position	カーソル位置
+	Playhead Position	再生ヘッドの位置
+	Step Playhead (Frames)	再生ヘッドをコマ送り（フレーム）
 	Disabled	無効
 	Alt + Scroll	Alt + スクロール
 	Shift + Scroll	Shift + スクロール
 	Ctrl + Scroll	Ctrl + スクロール
 	Ctrl + Shift + Scroll	Ctrl + Shift + スクロール
 	Playhead and Time Ruler	再生ヘッドとタイムルーラー
-	Move playhead on timeline click	タイムラインのクリックで再生ヘッドを移動
-	Ruler only (Classic)	タイムルーラーのみ（クラシック）
-	Empty space only	空きスペースのみ
-	Anywhere on timeline	タイムライン上のどこでも
-	Drag playhead line across tracks	トラック上で再生ヘッドの線をドラッグ
-	Anywhere, including over clips	クリップ上を含むどこでも
-	Split time ruler: drag upper half to set In/Out range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
+	Move Playhead on Timeline Click	タイムラインのクリックで再生ヘッドを移動
+	Ruler Only	タイムルーラーのみ
+	Empty Space Only	空きスペースのみ
+	Anywhere on Timeline	タイムライン上のどこでも
+	Drag Playhead Line Across Tracks	トラック上で再生ヘッドの線をドラッグ
+	Anywhere, Including Over Clips	クリップ上を含むどこでも
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
 	Other Timelines Mouse Wheel	他のタイムラインでのマウスホイール
-	Program Monitor timeline wheel	プログラムモニターのタイムラインホイール
-	Source Monitor timeline wheel	ソースモニターのタイムラインホイール
-	Effect Controls timeline wheel	エフェクトコントロールのタイムラインホイール
-	Timeline mouse wheel behavior	タイムラインのマウスホイール動作
-	Resize all tracks	すべてのトラックをリサイズ
-	Resize one track	1つのトラックをリサイズ
-	Resize all tracks (Classic)	すべてのトラックをリサイズ（クラシック）
-	Resize one track (Classic)	1つのトラックをリサイズ（クラシック）
-	Step frames	フレーム送り
-	Step keyframes	キーフレーム送り
-	Scroll	スクロール
-	Empty space only (Classic)	空きスペースのみ（クラシック）
-	Off (ruler head only)	オフ（ルーラーのヘッドのみ）
+	Program Monitor Timeline Wheel	プログラムモニターのタイムラインホイール
+	Source Monitor Timeline Wheel	ソースモニターのタイムラインホイール
+	Effect Controls Timeline Wheel	エフェクトコントロールのタイムラインホイール
+	Timeline Mouse Wheel Behavior	タイムラインのマウスホイール動作
+	Zoom, or Resize One Track Over Headers	ズーム（ヘッダー上では1トラックをリサイズ）
+	Resize All Tracks	すべてのトラックをリサイズ
+	Resize One Track	1つのトラックをリサイズ
+	Step Frames	フレーム送り
+	Step Keyframes	キーフレーム送り
+	Off (Ruler Head Only)	オフ（ルーラーのヘッドのみ）
 	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + スクロール
-	Alt + Scroll over track headers	トラックヘッダー上の Alt + スクロール
-	Vertical (Classic)	縦（クラシック）
-	Horizontal (Classic)	横（クラシック）
-	Zoom (Classic)	ズーム（クラシック）
-	Pan the Timeline by dragging with the middle mouse button	マウスの中ボタンのドラッグでタイムラインをパンする
-	Disabled (Classic)	無効（クラシック）
+	Pan Timeline by Dragging With Middle Mouse Button	マウスの中ボタンのドラッグでタイムラインをパンする
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール
 	Tint Color	色合い
 	To	変更先

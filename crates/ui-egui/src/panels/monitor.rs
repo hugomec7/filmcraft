@@ -387,38 +387,16 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     icons::paint(ui.painter(), wr.shrink(4.0), Icon::Wrench, if wresp.hovered() { t.tab_text_active } else { t.icon });
     app.auto.add(&format!("{prefix}.settings"), wr, "Settings");
     let wheel_pref_key = if which == Which::Program { "timeline.programWheel" } else { "timeline.sourceWheel" };
-    let wicon = match wheel_mode.as_str() {
-        "zoom" => Icon::Zoom,
-        "stepFrames" => Icon::StepFwd,
-        "stepKeyframes" => Icon::Keyframe,
-        "scroll" => Icon::Hand,
-        _ => Icon::Adjust,
-    };
+    let wicon = crate::widgets::panel_wheel_icon(&wheel_mode);
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
     let wb_active = wheel_mode != "off";
-    let wb_resp = ui.interact(wbr, egui::Id::new((prefix, "wheel-mode")), Sense::click()).on_hover_text(tl!("Timeline mouse wheel behavior"));
-    if wb_active {
-        ui.painter().rect_filled(wbr, 4.0, t.pressed);
-    } else if wb_resp.hovered() {
-        ui.painter().rect_filled(wbr, 4.0, t.hover);
-    }
-    icons::paint(
-        ui.painter(),
-        wbr.shrink(4.0),
-        wicon,
-        if wb_active {
-            t.accent
-        } else if wb_resp.hovered() {
-            t.tab_text_active
-        } else {
-            t.icon
-        },
-    );
-    app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline mouse wheel behavior");
+    let wb_resp = crate::widgets::wheel_mode_button(ui, wbr, wicon, wb_active, &t, egui::Id::new((prefix, "wheel-mode")))
+        .on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+    app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline Mouse Wheel Behavior");
     egui::Popup::menu(&wb_resp).show(|ui| {
         ui.set_min_width(210.0);
-        ui.label(egui::RichText::new(tl!("Timeline mouse wheel behavior")).color(t.text_dim).size(11.5));
+        ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
         ui.separator();
         for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL {
             if ui.selectable_label(wheel_mode == val, crate::i18n::t(label)).clicked() {
@@ -714,7 +692,7 @@ fn handle_monitor_wheel(
     let min_span = (rate.frame_duration().0.saturating_mul(MIN_ZOOM_FRAMES) as f64 / len).clamp(1e-6, 1.0);
     let action = if pinching {
         "zoom"
-    } else if w.alt && app.session.prefs.timeline.alt_scrolling == "zoom" && in_lower {
+    } else if w.alt && matches!(app.session.prefs.timeline.alt_scrolling.as_str(), "zoom" | "auto") && in_lower {
         "zoom"
     } else if (w.shift || w.alt) && wheel_mode == "zoom" && in_lower {
         "scroll"
