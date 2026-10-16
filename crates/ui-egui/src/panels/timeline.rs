@@ -1481,13 +1481,6 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
     let y = rect.min.y + 26.0;
     // what the bare wheel does now (Settings ▸ Timeline ▸ Timeline Mouse Scrolling), for the quick-setting button
     let wheel_now = app.session.prefs.timeline.wheel_action(false, false, false).to_string();
-    let wheel_icon = match wheel_now.as_str() {
-        "zoom" => Icon::Zoom,
-        "horizontal" => Icon::Hand,
-        "step" => Icon::StepFwd,
-        "trackHeightAll" | "trackHeightOne" => Icon::ListView,
-        _ => Icon::Adjust,
-    };
     let toggles: [(Icon, &str, bool, bool, &str); 7] = [
         (Icon::Nest, "nest", !app.session.state.sequences_as_clips, true, tl!("Insert and overwrite sequences as nests or individual clips")),
         (Icon::Magnet, "snap", app.session.state.snapping, true, tl!("Snap in Timeline (S)")),
@@ -1495,7 +1488,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
         (Icon::Captions, "captions", false, false, tl!("Caption track options")),
         (Icon::Marker, "marker", false, false, tl!("Add Marker (M)")),
         (Icon::Wrench, "settings", false, false, tl!("Timeline Display Settings")),
-        (wheel_icon, "wheel", wheel_now != "vertical", true, tl!("Timeline Mouse Wheel Behavior")),
+        (Icon::Hand, "wheel", wheel_now != "vertical", true, tl!("Timeline Mouse Wheel Behavior")),
     ];
     // seven buttons fit the header column: they close up a little when it is narrow
     let pitch = ((app.ui.timeline.header_w - 16.0) / 7.0).clamp(24.0, 30.0);
@@ -1524,7 +1517,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                 ui.set_min_width(210.0);
                 ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
                 ui.separator();
-                for &(val, label) in filmcraft_engine::settings::MOUSE_SCROLL {
+                for &(val, label) in filmcraft_engine::settings::MOUSE_SCROLL_BARE {
                     let c = ui.selectable_label(wheel_now == val, crate::i18n::t(label));
                     app.auto.add(&format!("timeline.wheelMode.{val}"), c.rect, label);
                     if c.clicked() {
