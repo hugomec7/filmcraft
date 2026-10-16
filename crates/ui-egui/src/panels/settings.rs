@@ -57,9 +57,7 @@ pub struct SettingsDraft {
 pub fn open(app: &mut FilmcraftApp, page: &str) -> Result<Value, String> {
     let cat = settings::category(page).ok_or_else(|| format!("unknown settings category `{page}`"))?;
     let mut values = app.session.prefs.to_value();
-    if get(&values, "timeline.scrollToZoom").as_bool() == Some(true)
-        && choice_text(get(&values, "timeline.mouseScrolling")) == "vertical"
-    {
+    if get(&values, "timeline.scrollToZoom").as_bool() == Some(true) && choice_text(get(&values, "timeline.mouseScrolling")) == "vertical" {
         put(&mut values, "timeline.mouseScrolling", json!("zoom"));
         if choice_text(get(&values, "timeline.altScrolling")) == "zoom" {
             put(&mut values, "timeline.altScrolling", json!("horizontal"));
@@ -451,21 +449,27 @@ fn combo(app: &mut FilmcraftApp, ui: &mut Ui, key: &str, current: &str, opts: &[
     let shown = opts.iter().find(|o| o.0 == current).map(|o| o.1.clone()).unwrap_or_else(|| current.to_string());
     let mut chosen = None;
     let mut items: Vec<(String, Rect, String)> = Vec::new();
-    // the current choice is cut to the box's width (the open list shows it whole)
-    let r = egui::ComboBox::from_id_salt(("settings", key))
-        .selected_text(RichText::new(crate::i18n::t(&shown)).size(12.5))
-        .width(width.min(ui.available_width()))
-        .truncate()
-        .height(480.0)
-        .show_ui(ui, |ui| {
-            for (v, l) in opts {
-                let r = ui.selectable_label(v == current, crate::i18n::t(l));
-                items.push((format!("settings.{key}.{v}"), r.rect, l.clone()));
-                if r.clicked() {
-                    chosen = Some(v.clone());
-                }
-            }
-        });
+    // the row may be wider than the box: cap the width so a long current choice is cut to the box
+    // instead of making this box wider than its neighbours
+    let r = ui
+        .scope(|ui| {
+            ui.set_max_width(width.min(ui.available_width()));
+            egui::ComboBox::from_id_salt(("settings", key))
+                .selected_text(RichText::new(crate::i18n::t(&shown)).size(12.5))
+                .width(width.min(ui.available_width()))
+                .truncate()
+                .height(480.0)
+                .show_ui(ui, |ui| {
+                    for (v, l) in opts {
+                        let r = ui.selectable_label(v == current, crate::i18n::t(l));
+                        items.push((format!("settings.{key}.{v}"), r.rect, l.clone()));
+                        if r.clicked() {
+                            chosen = Some(v.clone());
+                        }
+                    }
+                })
+        })
+        .inner;
     app.auto.add(&format!("settings.{key}"), r.response.rect, &shown);
     for (id, rect, l) in items {
         app.auto.add(&id, rect, &l);

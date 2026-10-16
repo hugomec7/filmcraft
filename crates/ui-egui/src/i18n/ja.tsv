@@ -2550,22 +2550,27 @@
 	Empty space only	空きスペースのみ
 	Anywhere on timeline	タイムライン上のどこでも
 	Drag playhead line across tracks	トラック上で再生ヘッドの線をドラッグ
-	Off (ruler head only) (Classic)	オフ（ルーラーのヘッドのみ）（クラシック）
 	Anywhere, including over clips	クリップ上を含むどこでも
 	Split time ruler: drag upper half to set In/Out range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
 	Other Timelines Mouse Wheel	他のタイムラインでのマウスホイール
 	Program Monitor timeline wheel	プログラムモニターのタイムラインホイール
 	Source Monitor timeline wheel	ソースモニターのタイムラインホイール
 	Effect Controls timeline wheel	エフェクトコントロールのタイムラインホイール
-	Zoom timeline	タイムラインをズーム
-	Step between keyframes	キーフレーム間を移動
-	Scroll horizontally	水平方向にスクロール
 	Timeline mouse wheel behavior	タイムラインのマウスホイール動作
+	Resize all tracks	すべてのトラックをリサイズ
+	Resize one track	1つのトラックをリサイズ
+	Resize all tracks (Classic)	すべてのトラックをリサイズ（クラシック）
+	Resize one track (Classic)	1つのトラックをリサイズ（クラシック）
+	Step frames	フレーム送り
+	Step keyframes	キーフレーム送り
+	Scroll	スクロール
+	Empty space only (Classic)	空きスペースのみ（クラシック）
+	Off (ruler head only)	オフ（ルーラーのヘッドのみ）
+	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + スクロール
+	Alt + Scroll over track headers	トラックヘッダー上の Alt + スクロール
 	Vertical (Classic)	縦（クラシック）
 	Horizontal (Classic)	横（クラシック）
 	Zoom (Classic)	ズーム（クラシック）
-	Track height: all video or all audio tracks (by pointer)	トラックの高さ：ポインター位置のビデオまたはオーディオ全トラック
-	Track height: only the track under the pointer	トラックの高さ：ポインター下のトラックのみ
 	Pan the Timeline by dragging with the middle mouse button	マウスの中ボタンのドラッグでタイムラインをパンする
 	Disabled (Classic)	無効（クラシック）
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール

@@ -484,3 +484,17 @@ fn the_wheel_can_resize_only_the_track_under_the_pointer() {
     assert_eq!(tv.track_h_override.len(), 1, "one track has its own height");
     assert!(tv.track_h_override.values().all(|h| *h > v0));
 }
+
+/// Classic default: Ctrl + Shift + Alt + wheel over the tracks resizes all video tracks, or all audio
+/// tracks, depending on the half the pointer is in.
+#[test]
+fn ctrl_shift_alt_wheel_resizes_all_tracks_of_the_half_under_the_pointer_by_default() {
+    let mut d = Driver::tall();
+    let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
+    let all = json!({"command": true, "shift": true, "alt": true});
+    d.wheel(0.2, 0.0, 40.0, all.clone());
+    let (v1, a1) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
+    assert!(v1 > v0 && a1 == a0, "video tracks taller, audio untouched: {v0} -> {v1}, {a0} -> {a1}");
+    d.wheel(0.8, 0.0, 40.0, all);
+    assert!(d.app().ui.timeline.audio_track_h > a1);
+}

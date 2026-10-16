@@ -2359,7 +2359,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             } else if !(w.command || w.alt || w.shift) && !area.contains(p) {
                 "vertical".to_string()
             } else {
-                app.session.prefs.timeline.wheel_action(w.command, w.alt, w.shift).to_string()
+                app.session.prefs.timeline.wheel_action_at(w.command, w.alt, w.shift, p.x < layout.content.min.x).to_string()
             };
             match action.as_str() {
                 "zoom" if w.delta.y != 0.0 => {
@@ -2606,28 +2606,27 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (Tool::Slip, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slip { clip, delta: Tick::ZERO }),
             (Tool::Slide, Grab::Other(Hit::Clip { clip, .. })) => Some(Drag::Slide { clip, delta: Tick::ZERO }),
             (_, Grab::Other(Hit::Clip { clip, track, .. })) => {
+                // "Move playhead on timeline click: anywhere": a click on a clip of any kind moves the playhead and selects it too
                 if resp.clicked() && app.session.prefs.timeline.click_to_move_playhead == "anywhere" && !(mods.shift || mods.alt || mods.command) {
                     scrub_playhead(app, seq, layout, p, false);
-                    None
-                } else {
-                    // select (shift toggles; alt selects one side of a link)
-                    let sel = &app.session.state.selection;
-                    if mods.shift {
-                        let _ = app.session.execute("timeline.select", json!({"clips": [clip.0], "toggle": true}));
-                    } else if !sel.contains(&clip) {
-                        if mods.alt {
-                            app.session.state.selection = vec![clip];
-                            app.session.state.transition_selection.clear();
-                        } else {
-                            let _ = app.session.execute("timeline.select", json!({"clips": [clip.0]}));
-                        }
-                    }
-                    if resp.drag_started() {
-                        let clips = app.session.state.selection.clone();
-                        Some(Drag::Move { clips, grab_tick: t, start_track: track, offset: Tick::ZERO, track_delta: 0, new_track: None, copy: mods.alt })
+                }
+                // select (shift toggles; alt selects one side of a link)
+                let sel = &app.session.state.selection;
+                if mods.shift {
+                    let _ = app.session.execute("timeline.select", json!({"clips": [clip.0], "toggle": true}));
+                } else if !sel.contains(&clip) {
+                    if mods.alt {
+                        app.session.state.selection = vec![clip];
+                        app.session.state.transition_selection.clear();
                     } else {
-                        None
+                        let _ = app.session.execute("timeline.select", json!({"clips": [clip.0]}));
                     }
+                }
+                if resp.drag_started() {
+                    let clips = app.session.state.selection.clone();
+                    Some(Drag::Move { clips, grab_tick: t, start_track: track, offset: Tick::ZERO, track_delta: 0, new_track: None, copy: mods.alt })
+                } else {
+                    None
                 }
             }
             // click a transition to select it (Shift adds / removes); drag an end to change its
@@ -2639,20 +2638,18 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                     && !(mods.shift || mods.alt || mods.command)
                 {
                     scrub_playhead(app, seq, layout, p, false);
-                    None
-                } else {
-                    // a drag of a selected transition (Shift too) moves it rather than toggling it out first
-                    if !(app.session.state.transition_selection.contains(&id) && resp.drag_started()) {
-                        let r = app.session.execute("timeline.select", json!({"transitions": [id.0], "toggle": mods.shift}));
-                        if let Err(e) = r {
-                            app.ui.status = e.to_string();
-                        }
+                }
+                // a drag of a selected transition (Shift too) moves it rather than toggling it out first
+                if !(app.session.state.transition_selection.contains(&id) && resp.drag_started()) {
+                    let r = app.session.execute("timeline.select", json!({"transitions": [id.0], "toggle": mods.shift}));
+                    if let Err(e) = r {
+                        app.ui.status = e.to_string();
                     }
-                    let span = seq.all_tracks().find_map(|tr| tr.transitions.iter().find(|x| x.id == id)).map(|x| (x.start, x.duration));
-                    match span {
-                        Some((start, duration)) if resp.drag_started() => Some(Drag::Transition { id, edge, from: t, start, duration }),
-                        _ => None,
-                    }
+                }
+                let span = seq.all_tracks().find_map(|tr| tr.transitions.iter().find(|x| x.id == id)).map(|x| (x.start, x.duration));
+                match span {
+                    Some((start, duration)) if resp.drag_started() => Some(Drag::Transition { id, edge, from: t, start, duration }),
+                    _ => None,
                 }
             }
             (_, Grab::Other(Hit::Transition { .. })) => None,
@@ -2661,12 +2658,12 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             (_, Grab::Other(hit @ (Hit::Empty { .. } | Hit::None))) if layout.content.contains(p) => {
                 if resp.drag_started() {
                     Some(Drag::Marquee { start: p, before: app.session.state.selection.clone(), add: mods.shift || mods.command, individual: mods.alt })
-                } else if app.session.prefs.timeline.click_to_move_playhead == "anywhere" && !(mods.shift || mods.alt || mods.command) {
-                    scrub_playhead(app, seq, layout, p, false);
-                    None
                 } else {
-                    if app.session.prefs.timeline.click_to_move_playhead == "emptySpace" {
-                        scrub_playhead(app, seq, layout, p, mods.shift);
+                    // the playhead follows a click on empty space in both "empty space only" and "anywhere"
+                    match app.session.prefs.timeline.click_to_move_playhead.as_str() {
+                        "emptySpace" => scrub_playhead(app, seq, layout, p, mods.shift),
+                        "anywhere" if !(mods.shift || mods.alt || mods.command) => scrub_playhead(app, seq, layout, p, false),
+                        _ => {}
                     }
                     app.session.state.selection.clear();
                     app.session.state.edit_points.clear();
