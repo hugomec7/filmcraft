@@ -2548,44 +2548,36 @@
 	Timecode Conversion	Conversão de timecode
 	Timeline Mouse Scrolling	Rolagem com o mouse na linha do tempo
 	Scroll to zoom on timeline	Rolar mouse para aplicar zoom na linha do tempo
-	Zoom anchor point	Ponto de ancoragem do zoom
-	Cursor position	Posição do cursor
-	Playhead position	Posição da agulha (Playhead)
-	Step playhead (frames)	Avançar/voltar agulha (quadros)
+	Zoom Anchor Point	Ponto de ancoragem do zoom
+	Cursor Position	Posição do cursor
+	Playhead Position	Posição da agulha (Playhead)
+	Step Playhead (Frames)	Avançar/voltar agulha (quadros)
 	Disabled	Desativado
 	Alt + Scroll	Alt + Scroll
 	Shift + Scroll	Shift + Scroll
 	Ctrl + Scroll	Ctrl + Scroll
 	Ctrl + Shift + Scroll	Ctrl + Shift + Scroll
 	Playhead and Time Ruler	Agulha (Playhead) e régua de tempo
-	Move playhead on timeline click	Mover a agulha ao clicar na linha do tempo
-	Ruler only (Classic)	Apenas na régua de tempo (Clássico)
-	Empty space only	Apenas em espaços vazios
-	Anywhere on timeline	Em qualquer lugar da linha do tempo
-	Drag playhead line across tracks	Arrastar a linha da agulha pelas faixas
-	Anywhere, including over clips	Em qualquer lugar, mesmo sobre clipes
-	Split time ruler: drag upper half to set In/Out range	Dividir régua de tempo: arrastar na faixa superior cria Entrada/Saída (In/Out)
+	Move Playhead on Timeline Click	Mover a agulha ao clicar na linha do tempo
+	Ruler Only	Apenas na régua de tempo
+	Empty Space Only	Apenas em espaços vazios
+	Anywhere on Timeline	Em qualquer lugar da linha do tempo
+	Drag Playhead Line Across Tracks	Arrastar a linha da agulha pelas faixas
+	Anywhere, Including Over Clips	Em qualquer lugar, mesmo sobre clipes
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir régua de tempo: arrastar na faixa superior cria Entrada/Saída (In/Out)
 	Other Timelines Mouse Wheel	Roda do mouse nas outras linhas do tempo
-	Program Monitor timeline wheel	Scroll na linha do tempo do Monitor de Programa
-	Source Monitor timeline wheel	Scroll na linha do tempo do Monitor de Origem (Source)
-	Effect Controls timeline wheel	Scroll na linha do tempo dos Controles de Efeitos
-	Timeline mouse wheel behavior	Comportamento do scroll na linha do tempo
-	Resize all tracks	Redimensionar todas as faixas
-	Resize one track	Redimensionar uma faixa
-	Resize all tracks (Classic)	Redimensionar todas as faixas (Clássico)
-	Resize one track (Classic)	Redimensionar uma faixa (Clássico)
-	Step frames	Avançar quadros
-	Step keyframes	Pular keyframes
-	Scroll	Rolar
-	Empty space only (Classic)	Apenas em espaços vazios (Clássico)
-	Off (ruler head only)	Desativado (apenas pelo topo na régua)
+	Program Monitor Timeline Wheel	Scroll na linha do tempo do Monitor de Programa
+	Source Monitor Timeline Wheel	Scroll na linha do tempo do Monitor de Origem (Source)
+	Effect Controls Timeline Wheel	Scroll na linha do tempo dos Controles de Efeitos
+	Timeline Mouse Wheel Behavior	Comportamento do scroll na linha do tempo
+	Zoom, or Resize One Track Over Headers	Zoom, ou redimensionar uma faixa sobre os cabeçalhos
+	Resize All Tracks	Redimensionar todas as faixas
+	Resize One Track	Redimensionar uma faixa
+	Step Frames	Avançar quadros
+	Step Keyframes	Pular keyframes
+	Off (Ruler Head Only)	Desativado (apenas pelo topo na régua)
 	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + Scroll
-	Alt + Scroll over track headers	Alt + Scroll sobre os cabeçalhos das faixas
-	Vertical (Classic)	Vertical (Clássico)
-	Horizontal (Classic)	Horizontal (Clássico)
-	Zoom (Classic)	Zoom (Clássico)
-	Pan the Timeline by dragging with the middle mouse button	Mover a linha do tempo arrastando com o botão do meio do mouse
-	Disabled (Classic)	Desativado (Clássico)
+	Pan Timeline by Dragging With Middle Mouse Button	Mover a linha do tempo arrastando com o botão do meio do mouse
 	Timeline Playback Auto-Scrolling	Rolagem automática da linha do tempo durante a reprodução
 	Tint Color	Cor da tonalidade
 	To	Até

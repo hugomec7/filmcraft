@@ -424,7 +424,7 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
     let action = if pinching {
         "zoom"
-    } else if w.alt && app.session.prefs.timeline.alt_scrolling == "zoom" {
+    } else if w.alt && matches!(app.session.prefs.timeline.alt_scrolling.as_str(), "zoom" | "auto") {
         "zoom"
     } else if (w.shift || w.alt) && mode == "zoom" {
         "scroll"
@@ -520,18 +520,16 @@ fn ec_footer_controls(
     rate: filmcraft_time::FrameRate,
     t: &Tokens,
 ) {
-    // Quick wheel mode selector next to the footer timecode
+    // Quick wheel mode button next to the footer timecode
     let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
-    let btn_w = (split - rect.min.x - 114.0).clamp(24.0, 145.0);
-    if btn_w >= 24.0 {
-        let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 23.0), vec2(btn_w, 20.0));
-        let label =
-            filmcraft_engine::settings::PANEL_WHEEL.iter().find(|(k, _)| *k == mode).map(|(_, l)| crate::i18n::t(l)).unwrap_or(tl!("Disabled (Classic)"));
-        let resp = crate::widgets::dropdown_text(ui, br, label, t, egui::Id::new("ec-wheel-mode")).on_hover_text(tl!("Timeline mouse wheel behavior"));
-        app.auto.add("effectControls.wheelMode", br, "Timeline mouse wheel behavior");
+    if split - rect.min.x > 140.0 {
+        let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 25.0), vec2(22.0, 22.0));
+        let resp = crate::widgets::wheel_mode_button(ui, br, crate::widgets::panel_wheel_icon(&mode), mode != "off", t, egui::Id::new("ec-wheel-mode"))
+            .on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+        app.auto.add("effectControls.wheelMode", br, "Timeline Mouse Wheel Behavior");
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_min_width(210.0);
-            ui.label(egui::RichText::new(tl!("Timeline mouse wheel behavior")).color(t.text_dim).size(11.5));
+            ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
             ui.separator();
             for &(val, text) in filmcraft_engine::settings::PANEL_WHEEL {
                 if ui.selectable_label(mode == val, crate::i18n::t(text)).clicked() {

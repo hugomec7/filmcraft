@@ -1479,16 +1479,29 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
     // toolbar: 30 × 30 buttons, "on" = #4b4b4b fill
     let mut x = rect.min.x + 12.0;
     let y = rect.min.y + 26.0;
-    let toggles: [(Icon, &str, bool, bool, &str); 6] = [
+    // what the bare wheel does now (Settings ▸ Timeline ▸ Timeline Mouse Scrolling), for the quick-setting button
+    let wheel_now = app.session.prefs.timeline.wheel_action(false, false, false).to_string();
+    let wheel_icon = match wheel_now.as_str() {
+        "zoom" => Icon::Zoom,
+        "horizontal" => Icon::Hand,
+        "step" => Icon::StepFwd,
+        "trackHeightAll" | "trackHeightOne" => Icon::ListView,
+        _ => Icon::Adjust,
+    };
+    let toggles: [(Icon, &str, bool, bool, &str); 7] = [
         (Icon::Nest, "nest", !app.session.state.sequences_as_clips, true, tl!("Insert and overwrite sequences as nests or individual clips")),
         (Icon::Magnet, "snap", app.session.state.snapping, true, tl!("Snap in Timeline (S)")),
         (Icon::Link, "linked", app.session.state.linked_selection, true, tl!("Linked Selection")),
         (Icon::Captions, "captions", false, false, tl!("Caption track options")),
         (Icon::Marker, "marker", false, false, tl!("Add Marker (M)")),
         (Icon::Wrench, "settings", false, false, tl!("Timeline Display Settings")),
+        (wheel_icon, "wheel", wheel_now != "vertical", true, tl!("Timeline Mouse Wheel Behavior")),
     ];
+    // seven buttons fit the header column: they close up a little when it is narrow
+    let pitch = ((app.ui.timeline.header_w - 16.0) / 7.0).clamp(24.0, 30.0);
+    let size = pitch - 2.0;
     for (icon, key, on, toggle, tip) in toggles {
-        let r = Rect::from_min_size(pos2(x, y), vec2(28.0, 28.0));
+        let r = Rect::from_min_size(pos2(x, y), vec2(size, size));
         let resp = ui.interact(r, egui::Id::new(("tl-toggle", key)), Sense::click()).on_hover_text(tip);
         app.auto.add(&format!("timeline.toggle.{key}"), r, tip);
         if toggle && on {
@@ -1496,7 +1509,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
         } else if resp.hovered() {
             p.rect_filled(r, 4.0, t.hover);
         }
-        icons::paint(&p, r.shrink(7.0), icon, if toggle && on { t.text } else { t.text_dim });
+        icons::paint(&p, r.shrink(size / 4.0), icon, if toggle && on { t.text } else { t.text_dim });
         if resp.clicked() {
             let _ = match key {
                 "nest" => app.session.execute("sequence.nestSequences", json!({})),
@@ -1505,6 +1518,23 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                 "marker" => app.session.execute("markers.add", json!({})),
                 _ => Ok(Value::Null),
             };
+        }
+        if key == "wheel" {
+            egui::Popup::menu(&resp).show(|ui| {
+                ui.set_min_width(210.0);
+                ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
+                ui.separator();
+                for &(val, label) in filmcraft_engine::settings::MOUSE_SCROLL {
+                    let c = ui.selectable_label(wheel_now == val, crate::i18n::t(label));
+                    app.auto.add(&format!("timeline.wheelMode.{val}"), c.rect, label);
+                    if c.clicked() {
+                        // only the bare wheel changes; the modifiers stay as they are in Settings ▸ Timeline
+                        let _ = app.session.execute("prefs.set", json!({"key": "timeline.scrollToZoom", "value": false}));
+                        let _ = app.session.execute("prefs.set", json!({"key": "timeline.mouseScrolling", "value": val}));
+                        ui.close();
+                    }
+                }
+            });
         }
         if key == "settings" {
             egui::Popup::menu(&resp).show(|ui| {
@@ -1543,7 +1573,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                 }
             });
         }
-        x += 30.0;
+        x += pitch;
     }
     // ----- ruler: markers row · labels · ticks · 2 pt render bar
     let clip = p.with_clip_rect(ruler);
