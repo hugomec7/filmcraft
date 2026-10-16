@@ -431,7 +431,7 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     } else if !(w.alt || w.command || w.shift) && w.delta.x.abs() > w.delta.y.abs() {
         "scroll"
     } else if !(w.alt || w.command || w.shift) {
-        mode.as_str()
+        if mode == "horizontal" { "scroll" } else { mode.as_str() }
     } else {
         "off"
     };
@@ -524,8 +524,8 @@ fn ec_footer_controls(
     let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
     if split - rect.min.x > 140.0 {
         let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 25.0), vec2(22.0, 22.0));
-        let resp = crate::widgets::wheel_mode_button(ui, br, crate::widgets::panel_wheel_icon(&mode), mode != "off", t, egui::Id::new("ec-wheel-mode"))
-            .on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+        let resp =
+            crate::widgets::wheel_mode_button(ui, br, mode != "off", t, egui::Id::new("ec-wheel-mode")).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
         app.auto.add("effectControls.wheelMode", br, "Timeline Mouse Wheel Behavior");
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_min_width(210.0);

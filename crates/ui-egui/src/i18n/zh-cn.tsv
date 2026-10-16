@@ -3604,9 +3604,12 @@
 	Source Monitor Timeline Wheel	源监视器时间轴滚轮
 	Effect Controls Timeline Wheel	效果控件时间轴滚轮
 	Timeline Mouse Wheel Behavior	时间轴鼠标滚轮行为
-	Zoom, or Resize One Track Over Headers	缩放（在轨道头部上调整单个轨道大小）
+	Zoom and Resize Track	缩放并调整轨道大小
+	Zoom Anchor Point	缩放锚点
+	Cursor Position	光标位置
+	Playhead Position	播放头位置
 	Resize All Tracks	调整所有轨道大小
-	Resize One Track	调整单个轨道大小
+	Resize Track	调整轨道大小
 	Step Frames	逐帧移动
 	Step Keyframes	逐关键帧移动
 	Off (Ruler Head Only)	关闭（仅标尺磁头）

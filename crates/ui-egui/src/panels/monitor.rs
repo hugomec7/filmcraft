@@ -387,12 +387,11 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     icons::paint(ui.painter(), wr.shrink(4.0), Icon::Wrench, if wresp.hovered() { t.tab_text_active } else { t.icon });
     app.auto.add(&format!("{prefix}.settings"), wr, "Settings");
     let wheel_pref_key = if which == Which::Program { "timeline.programWheel" } else { "timeline.sourceWheel" };
-    let wicon = crate::widgets::panel_wheel_icon(&wheel_mode);
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
-    let wb_active = wheel_mode != "off";
-    let wb_resp = crate::widgets::wheel_mode_button(ui, wbr, wicon, wb_active, &t, egui::Id::new((prefix, "wheel-mode")))
-        .on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+    let wb_active = wheel_mode != "horizontal";
+    let wb_resp =
+        crate::widgets::wheel_mode_button(ui, wbr, wb_active, &t, egui::Id::new((prefix, "wheel-mode"))).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
     app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline Mouse Wheel Behavior");
     egui::Popup::menu(&wb_resp).show(|ui| {
         ui.set_min_width(210.0);
@@ -699,7 +698,7 @@ fn handle_monitor_wheel(
     } else if !(w.alt || w.command || w.shift) && w.delta.x.abs() > w.delta.y.abs() && in_lower {
         "scroll"
     } else if !(w.alt || w.command || w.shift) {
-        wheel_mode
+        if wheel_mode == "horizontal" { "scroll" } else { wheel_mode }
     } else {
         "off"
     };

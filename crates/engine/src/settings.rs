@@ -747,11 +747,11 @@ pub struct TimelinePrefs {
     /// "Split Time Ruler: Drag Upper Half to Set In/Out Range": upper half of the time ruler
     /// drags/edits the sequence In/Out range while the lower half scrubs the playhead.
     pub ruler_drag_in_out: bool,
-    /// "Program Monitor Timeline Wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    /// "Program Monitor Timeline Wheel": `off` | `horizontal` | `zoom` | `stepFrames` | `stepKeyframes`.
     pub program_wheel: String,
-    /// "Source Monitor Timeline Wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    /// "Source Monitor Timeline Wheel": `off` | `horizontal` | `zoom` | `stepFrames` | `stepKeyframes`.
     pub source_wheel: String,
-    /// "Effect Controls Timeline Wheel": `off` | `zoom` | `stepFrames` | `stepKeyframes` | `scroll`.
+    /// "Effect Controls Timeline Wheel": `off` | `horizontal` | `zoom` | `stepFrames` | `stepKeyframes`.
     pub effect_controls_wheel: String,
     /// "Pan Timeline by Dragging With Middle Mouse Button" (on = the classic behaviour).
     pub middle_button_pan: bool,
@@ -794,8 +794,8 @@ impl Default for TimelinePrefs {
             click_to_move_playhead: "rulerOnly".into(),
             drag_playhead_line: "emptySpace".into(),
             ruler_drag_in_out: false,
-            program_wheel: "off".into(),
-            source_wheel: "off".into(),
+            program_wheel: "horizontal".into(),
+            source_wheel: "horizontal".into(),
             effect_controls_wheel: "off".into(),
             middle_button_pan: true,
             mono_media_tracks: "useFile".into(),
@@ -860,7 +860,11 @@ impl TimelinePrefs {
         } else if shift {
             self.shift_scrolling.as_str()
         } else {
-            self.mouse_scrolling.as_str()
+            // resizing tracks is for modifiers only: an older value falls back to the classic wheel
+            match self.mouse_scrolling.as_str() {
+                "trackHeightAll" | "trackHeightOne" => "vertical",
+                other => other,
+            }
         }
     }
 
@@ -1071,27 +1075,30 @@ const CACHE_MGMT: &[(&str, &str)] = &[
     ("exceedsSize", "Automatically delete oldest cache files when cache exceeds"),
 ];
 const AUTO_SCROLL: &[(&str, &str)] = &[("noScroll", "No Scroll"), ("pageScroll", "Page Scroll"), ("smoothScroll", "Smooth Scroll")];
-/// What a mouse wheel gesture does on the sequence Timeline. The same actions are offered for the
-/// bare wheel and for every modifier.
+/// What the bare wheel does on the sequence Timeline. Resizing tracks is only offered with a
+/// modifier ([`MOUSE_SCROLL`]).
+pub const MOUSE_SCROLL_BARE: &[(&str, &str)] =
+    &[("vertical", "Vertical"), ("horizontal", "Horizontal"), ("zoom", "Zoom"), ("step", "Step Playhead (Frames)"), ("off", "Disabled")];
+/// What a mouse wheel gesture with a modifier does on the sequence Timeline.
 pub const MOUSE_SCROLL: &[(&str, &str)] = &[
     ("vertical", "Vertical"),
     ("horizontal", "Horizontal"),
     ("zoom", "Zoom"),
     ("step", "Step Playhead (Frames)"),
     ("trackHeightAll", "Resize All Tracks"),
-    ("trackHeightOne", "Resize One Track"),
+    ("trackHeightOne", "Resize Track"),
     ("off", "Disabled"),
 ];
 /// The same for Alt + wheel, which also has `auto`: zoom, except over the track headers, where it
 /// resizes the track under the pointer.
 const MOUSE_SCROLL_ALT: &[(&str, &str)] = &[
-    ("auto", "Zoom, or Resize One Track Over Headers"),
+    ("auto", "Zoom and Resize Track"),
     ("vertical", "Vertical"),
     ("horizontal", "Horizontal"),
     ("zoom", "Zoom"),
     ("step", "Step Playhead (Frames)"),
     ("trackHeightAll", "Resize All Tracks"),
-    ("trackHeightOne", "Resize One Track"),
+    ("trackHeightOne", "Resize Track"),
     ("off", "Disabled"),
 ];
 const ZOOM_ANCHOR: &[(&str, &str)] = &[("cursor", "Cursor Position"), ("playhead", "Playhead Position")];
@@ -1099,7 +1106,8 @@ const CLICK_PLAYHEAD: &[(&str, &str)] = &[("rulerOnly", "Ruler Only"), ("emptySp
 const DRAG_PLAYHEAD_LINE: &[(&str, &str)] =
     &[("off", "Off (Ruler Head Only)"), ("emptySpace", "Empty Space Only"), ("anywhere", "Anywhere, Including Over Clips")];
 /// What the wheel does over the Program / Source Monitor and Effect Controls timelines.
-pub const PANEL_WHEEL: &[(&str, &str)] = &[("off", "Disabled"), ("zoom", "Zoom"), ("stepFrames", "Step Frames"), ("stepKeyframes", "Step Keyframes")];
+pub const PANEL_WHEEL: &[(&str, &str)] =
+    &[("off", "Disabled"), ("horizontal", "Horizontal"), ("zoom", "Zoom"), ("stepFrames", "Step Frames"), ("stepKeyframes", "Step Keyframes")];
 const HW_DECODE: &[(&str, &str)] = &[("auto", "Auto"), ("off", "Off")];
 const TRACKS: &[(&str, &str)] = &[("useFile", "Use File"), ("mono", "Mono"), ("stereo", "Stereo"), ("5.1", "5.1"), ("adaptive", "Adaptive")];
 pub const DURATION_UNITS: &[(&str, &str)] = &[("frames", "Frames"), ("seconds", "Seconds")];
@@ -1453,7 +1461,7 @@ static CATEGORIES: &[Category] = &[
             Row::Group(
                 "Timeline Mouse Scrolling",
                 &[
-                    f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
+                    f("timeline.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL_BARE), true),
                     f("timeline.altScrolling", "Alt + Scroll", Kind::Choice(MOUSE_SCROLL_ALT), true),
                     f("timeline.shiftScrolling", "Shift + Scroll", Kind::Choice(MOUSE_SCROLL), true),
                     f("timeline.ctrlScrolling", "Ctrl + Scroll", Kind::Choice(MOUSE_SCROLL), true),

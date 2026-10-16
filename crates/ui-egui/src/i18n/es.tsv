@@ -336,7 +336,7 @@
 	Time Interpolation	Interpolación de tiempo
 	Timecode	Código de tiempo
 	Timecode…	Código de tiempo…
-	Timeline	Línea de tiempo
+	Timeline	Línea de Tiempo
 	Timeline…	Línea de tiempo…
 	Toggle Proxies	Alternar proxies
 	Tools	Herramientas
@@ -1324,7 +1324,7 @@
 	Audio Out Point	Punto de salida de audio
 	Audio Samples	Muestras de audio
 	Audio Time Units	Unidades de tiempo de audio
-	Audio Transition Default Duration	Duración predeterminada de las transiciones de audio
+	Audio Transition Default Duration	Duración Predeterminada de las Transiciones de Audio
 	Audio Transitions	Transiciones de audio
 	Audio Usage	Uso de audio
 	Auto	Automático
@@ -1575,7 +1575,7 @@
 	DeReverb	Reductor de reverberación
 	Decay	Caída
 	Decay Time (RT60)	Tiempo de caída (RT60)
-	Default Audio Tracks	Pistas de audio predeterminadas
+	Default Audio Tracks	Pistas de Audio Predeterminadas
 	Default Emoji font	Fuente de emoji predeterminada
 	Default Media Scaling	Escalado de medios predeterminado
 	Default Output	Salida predeterminada
@@ -2076,7 +2076,7 @@
 	Modern High Gain	Ganancia alta moderna
 	Modulation	Modulación
 	Modulation Rate	Velocidad de modulación
-	Mono Media	Medios mono
+	Mono Media	Medios Mono
 	Monochrome	Monocromo
 	Monochrome toned cyan-blue	Monocromo virado a azul cian
 	Monochrome toned warm brown	Monocromo virado a marrón cálido
@@ -2094,7 +2094,7 @@
 	Movie	Película
 	Movie (audio and video)	Película (audio y video)
 	Multiband Compressor	Compresor multibanda
-	Multichannel Mono Media	Medios mono multicanal
+	Multichannel Mono Media	Medios Mono Multicanal
 	Multiply	Multiplicar
 	Multitap Delay	Retardo multitoma
 	Music	Música
@@ -2106,7 +2106,7 @@
 	Next to original media files	Junto a los archivos multimedia originales
 	Night	Noche
 	No Motion	Sin movimiento
-	No Scroll	Sin desplazamiento
+	No Scroll	Sin Desplazamiento
 	No plugins are installed. Changes will take effect the next time you start FilmCraft.	No hay complementos instalados. Los cambios se aplicarán la próxima vez que inicies FilmCraft.
 	Noise	Ruido
 	Noise & Grain	Ruido y grano
@@ -2154,7 +2154,7 @@
 	Overlay	Superponer
 	Overshoot	Rebasamiento
 	Page Peel	Despegar página
-	Page Scroll	Desplazar página
+	Page Scroll	Desplazar Página
 	Page Turn	Pasar página
 	Paint Bucket	Bote de pintura
 	Paint On Black	Pintar sobre negro
@@ -2415,7 +2415,7 @@
 	Smart quotes	Comillas tipográficas
 	Smooth	Suave
 	Smooth Motion	Movimiento suave
-	Smooth Scroll	Desplazamiento suave
+	Smooth Scroll	Desplazamiento Suave
 	Smoothness	Suavidad
 	Snap playhead in Timeline when Snap is enabled	Ajustar el cabezal en la línea de tiempo cuando el ajuste está activado
 	Soft	Suave
@@ -2473,12 +2473,12 @@
 	Stereo Expand	Expansión estéreo
 	Stereo Expander	Expansor estéreo
 	Stereo Imagery	Imagen estéreo
-	Stereo Media	Medios estéreo
+	Stereo Media	Medios Estéreo
 	Stereo Phasing	Fase estéreo
 	Stereoscopic - Over/Under	Estereoscópico - arriba/abajo
 	Stereoscopic - Side by Side	Estereoscópico - lado a lado
 	Still	Imagen fija
-	Still Image Default Duration	Duración predeterminada de imágenes fijas
+	Still Image Default Duration	Duración Predeterminada de Imágenes Fijas
 	Stone Church	Iglesia de piedra
 	Stopband Attenuation	Atenuación de la banda de rechazo
 	Straight Color	Color directo
@@ -2547,39 +2547,39 @@
 	Time	Tiempo
 	Time and Pitch	Tiempo y tono
 	Timecode Conversion	Conversión de código de tiempo
-	Timeline Mouse Scrolling	Desplazamiento con el ratón en la línea de tiempo
+	Timeline Mouse Scrolling	Desplazamiento con el Ratón en la Línea de Tiempo
 	Scroll to zoom on timeline	Usar la rueda del ratón para hacer zoom en la línea de tiempo
-	Zoom Anchor Point	Punto de anclaje del zoom
-	Cursor Position	Posición del cursor
-	Playhead Position	Posición del cabezal
-	Step Playhead (Frames)	Avanzar/retroceder cabezal (fotogramas)
+	Zoom Anchor Point	Punto de Anclaje del Zoom
+	Cursor Position	Posición del Cursor
+	Playhead Position	Posición del Cabezal
+	Step Playhead (Frames)	Avanzar/Retroceder Cabezal (Fotogramas)
 	Disabled	Desactivado
 	Alt + Scroll	Alt + Rueda
 	Shift + Scroll	Mayús + Rueda
 	Ctrl + Scroll	Ctrl + Rueda
 	Ctrl + Shift + Scroll	Ctrl + Mayús + Rueda
-	Playhead and Time Ruler	Cabezal de reproducción y regla de tiempo
-	Move Playhead on Timeline Click	Mover el cabezal al hacer clic en la línea de tiempo
-	Ruler Only	Solo en la regla de tiempo
-	Empty Space Only	Solo en espacios vacíos
-	Anywhere on Timeline	En cualquier lugar de la línea de tiempo
-	Drag Playhead Line Across Tracks	Arrastrar la línea del cabezal sobre las pistas
-	Anywhere, Including Over Clips	En cualquier lugar, incluso sobre clips
-	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir regla de tiempo: arrastrar en la mitad superior define Entrada/Salida
-	Other Timelines Mouse Wheel	Rueda del ratón en otras líneas de tiempo
-	Program Monitor Timeline Wheel	Rueda en la línea de tiempo del Monitor de programa
-	Source Monitor Timeline Wheel	Rueda en la línea de tiempo del Monitor de origen
-	Effect Controls Timeline Wheel	Rueda en la línea de tiempo de Controles de efectos
-	Timeline Mouse Wheel Behavior	Comportamiento de la rueda del ratón en la línea de tiempo
-	Zoom, or Resize One Track Over Headers	Zoom, o cambiar el tamaño de una pista sobre las cabeceras
-	Resize All Tracks	Cambiar el tamaño de todas las pistas
-	Resize One Track	Cambiar el tamaño de una pista
-	Step Frames	Avanzar fotogramas
-	Step Keyframes	Saltar fotogramas clave
-	Off (Ruler Head Only)	Desactivado (solo por la cabeza en la regla)
+	Playhead and Time Ruler	Cabezal de Reproducción y Regla de Tiempo
+	Move Playhead on Timeline Click	Mover el Cabezal al Hacer Clic en la Línea de Tiempo
+	Ruler Only	Solo en la Regla de Tiempo
+	Empty Space Only	Solo en Espacios Vacíos
+	Anywhere on Timeline	En Cualquier Lugar de la Línea de Tiempo
+	Drag Playhead Line Across Tracks	Arrastrar la Línea del Cabezal sobre las Pistas
+	Anywhere, Including Over Clips	En Cualquier Lugar, Incluso sobre Clips
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir Regla de Tiempo: Arrastrar en la Mitad Superior Define Entrada/Salida
+	Other Timelines Mouse Wheel	Rueda del Ratón en Otras Líneas de Tiempo
+	Program Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Programa
+	Source Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Origen
+	Effect Controls Timeline Wheel	Rueda en la Línea de Tiempo de Controles de Efectos
+	Timeline Mouse Wheel Behavior	Comportamiento de la Rueda del Ratón en la Línea de Tiempo
+	Zoom and Resize Track	Zoom y Cambiar Tamaño de Pista
+	Resize All Tracks	Cambiar el Tamaño de Todas las Pistas
+	Resize Track	Cambiar el Tamaño de la Pista
+	Step Frames	Avanzar Fotogramas
+	Step Keyframes	Saltar Fotogramas Clave
+	Off (Ruler Head Only)	Desactivado (Solo por la Cabeza en la Regla)
 	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + Scroll
-	Pan Timeline by Dragging With Middle Mouse Button	Desplazar la línea de tiempo arrastrando con el botón central del ratón
-	Timeline Playback Auto-Scrolling	Desplazamiento automático de la línea de tiempo al reproducir
+	Pan Timeline by Dragging With Middle Mouse Button	Desplazar la Línea de Tiempo Arrastrando con el Botón Central del Ratón
+	Timeline Playback Auto-Scrolling	Desplazamiento Automático de la Línea de Tiempo al Reproducir
 	Tint Color	Color del matiz
 	To	Hasta
 	Tolerance	Tolerancia
@@ -2629,7 +2629,7 @@
 	Upper Right	Arriba a la derecha
 	Use Color Noise	Usar ruido de color
 	Use End Color	Usar color final
-	Use File	Usar archivo
+	Use File	Usar Archivo
 	Use Glow Color	Usar color de resplandor
 	Use Media Source	Usar el origen del medio
 	Use Tint Color	Usar color de matiz
@@ -2684,7 +2684,7 @@
 	Video Info	Información de video
 	Video Limiter	Limitador de video
 	Video Out Point	Punto de salida de video
-	Video Transition Default Duration	Duración predeterminada de las transiciones de video
+	Video Transition Default Duration	Duración Predeterminada de las Transiciones de Video
 	Video Transitions	Transiciones de video
 	Video Usage	Uso de video
 	Vignette	Viñeta

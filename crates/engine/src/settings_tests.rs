@@ -970,8 +970,8 @@ fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     assert_eq!(p.click_to_move_playhead, "rulerOnly");
     assert_eq!(p.drag_playhead_line, "emptySpace");
     assert!(!p.ruler_drag_in_out);
-    assert_eq!(p.program_wheel, "off");
-    assert_eq!(p.source_wheel, "off");
+    assert_eq!(p.program_wheel, "horizontal");
+    assert_eq!(p.source_wheel, "horizontal");
     assert_eq!(p.effect_controls_wheel, "off");
     assert_eq!(p.wheel_action(false, false, false), "vertical");
     assert_eq!(p.wheel_action(false, true, false), "zoom");
@@ -1051,10 +1051,51 @@ fn timeline_labels_name_no_other_product_and_use_title_case() {
             }
         }
     }
-    for key in ["timeline.mouseScrolling", "timeline.altScrolling", "timeline.clickToMovePlayhead", "timeline.dragPlayheadLine", "timeline.programWheel"] {
+    for key in [
+        "timeline.mouseScrolling",
+        "timeline.altScrolling",
+        "timeline.shiftScrolling",
+        "timeline.ctrlShiftScrolling",
+        "timeline.clickToMovePlayhead",
+        "timeline.dragPlayheadLine",
+        "timeline.programWheel",
+        "timeline.sourceWheel",
+        "timeline.effectControlsWheel",
+    ] {
         let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
         for (_, label) in opts {
             assert!(title_case(label), "{key}: {label}");
+        }
+    }
+}
+
+/// Resizing tracks belongs to the modifiers: the bare wheel does not offer it (and an older saved
+/// value falls back to the classic wheel), and the monitors scroll their time ruler sideways by default.
+#[test]
+fn the_bare_wheel_never_resizes_tracks_and_the_monitors_scroll_sideways_by_default() {
+    let options = |key: &str| -> Vec<&'static str> {
+        let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
+        opts.iter().map(|(v, _)| *v).collect()
+    };
+    let bare = options("timeline.mouseScrolling");
+    assert!(bare.iter().all(|v| !v.starts_with("trackHeight")), "{bare:?}");
+    for key in ["timeline.altScrolling", "timeline.shiftScrolling", "timeline.ctrlScrolling", "timeline.ctrlShiftScrolling", "timeline.ctrlShiftAltScrolling"] {
+        let o = options(key);
+        assert!(o.contains(&"trackHeightAll") && o.contains(&"trackHeightOne"), "{key}: {o:?}");
+    }
+    for old in ["trackHeightAll", "trackHeightOne"] {
+        let p = settings::TimelinePrefs { mouse_scrolling: old.into(), ..Default::default() };
+        assert_eq!(p.wheel_action(false, false, false), "vertical", "{old}");
+        let mut s = Session::default();
+        assert!(s.execute("prefs.set", json!({"key": "timeline.mouseScrolling", "value": old})).is_err(), "{old}");
+    }
+    let p = settings::TimelinePrefs::default();
+    assert_eq!((p.program_wheel.as_str(), p.source_wheel.as_str(), p.effect_controls_wheel.as_str()), ("horizontal", "horizontal", "off"));
+    assert!(options("timeline.programWheel").contains(&"horizontal"));
+    for (_, f) in settings::fields().into_iter().filter(|(_, f)| f.key.starts_with("timeline.")) {
+        assert!(!f.label.contains("One Track"), "{}", f.label);
+        if let Kind::Choice(opts) = f.kind {
+            assert!(opts.iter().all(|(_, l)| !l.contains("One Track")), "{}", f.key);
         }
     }
 }

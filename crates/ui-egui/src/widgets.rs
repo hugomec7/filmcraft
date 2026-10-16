@@ -296,9 +296,9 @@ pub fn dropdown_text(ui: &mut Ui, rect: Rect, text: &str, t: &Tokens, id: egui::
     resp
 }
 
-/// The small "Timeline Mouse Wheel Behavior" button of the monitors, Effect Controls and Timeline: the
-/// icon shows what the wheel does now, and the button is filled while it does something.
-pub fn wheel_mode_button(ui: &mut Ui, rect: Rect, icon: Icon, active: bool, t: &Tokens, id: egui::Id) -> Response {
+/// The small "Timeline Mouse Wheel Behavior" button of the monitors, Effect Controls and Timeline:
+/// always the hand icon, filled while the wheel is set to something other than the default.
+pub fn wheel_mode_button(ui: &mut Ui, rect: Rect, active: bool, t: &Tokens, id: egui::Id) -> Response {
     let resp = ui.interact(rect, id, Sense::click());
     if active {
         ui.painter().rect_filled(rect, 4.0, t.pressed);
@@ -312,18 +312,8 @@ pub fn wheel_mode_button(ui: &mut Ui, rect: Rect, icon: Icon, active: bool, t: &
     } else {
         t.icon
     };
-    icons::paint(ui.painter(), rect.shrink(4.0), icon, color);
+    icons::paint(ui.painter(), rect.shrink(4.0), Icon::Hand, color);
     resp
-}
-
-/// The icon of a monitor / Effect Controls wheel mode (`PANEL_WHEEL`).
-pub fn panel_wheel_icon(mode: &str) -> Icon {
-    match mode {
-        "zoom" => Icon::Zoom,
-        "stepFrames" => Icon::StepFwd,
-        "stepKeyframes" => Icon::Keyframe,
-        _ => Icon::Adjust,
-    }
 }
 
 /// Where dialogs open: the centre of the app window. Dialogs use it as `default_pos` with a
