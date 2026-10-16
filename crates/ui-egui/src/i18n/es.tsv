@@ -2564,22 +2564,27 @@
 	Empty space only	Solo en espacios vacíos
 	Anywhere on timeline	En cualquier lugar de la línea de tiempo
 	Drag playhead line across tracks	Arrastrar la línea del cabezal sobre las pistas
-	Off (ruler head only) (Classic)	Desactivado (solo desde la regla) (Clásico)
 	Anywhere, including over clips	En cualquier lugar, incluso sobre clips
 	Split time ruler: drag upper half to set In/Out range	Dividir regla de tiempo: arrastrar en la mitad superior define Entrada/Salida
 	Other Timelines Mouse Wheel	Rueda del ratón en otras líneas de tiempo
 	Program Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de programa
 	Source Monitor timeline wheel	Rueda en la línea de tiempo del Monitor de origen
 	Effect Controls timeline wheel	Rueda en la línea de tiempo de Controles de efectos
-	Zoom timeline	Hacer zoom en la línea de tiempo
-	Step between keyframes	Avanzar/retroceder entre fotogramas clave
-	Scroll horizontally	Desplazar horizontalmente
 	Timeline mouse wheel behavior	Comportamiento de la rueda del ratón en la línea de tiempo
+	Resize all tracks	Cambiar el tamaño de todas las pistas
+	Resize one track	Cambiar el tamaño de una pista
+	Resize all tracks (Classic)	Cambiar el tamaño de todas las pistas (Clásico)
+	Resize one track (Classic)	Cambiar el tamaño de una pista (Clásico)
+	Step frames	Avanzar fotogramas
+	Step keyframes	Saltar fotogramas clave
+	Scroll	Desplazar
+	Empty space only (Classic)	Solo en espacios vacíos (Clásico)
+	Off (ruler head only)	Desactivado (solo por la cabeza en la regla)
+	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + Scroll
+	Alt + Scroll over track headers	Alt + Scroll sobre las cabeceras de pista
 	Vertical (Classic)	Vertical (Clásico)
 	Horizontal (Classic)	Horizontal (Clásico)
 	Zoom (Classic)	Zoom (Clásico)
-	Track height: all video or all audio tracks (by pointer)	Altura de pistas: todas las de vídeo o todas las de audio (según el puntero)
-	Track height: only the track under the pointer	Altura de pistas: solo la pista bajo el puntero
 	Pan the Timeline by dragging with the middle mouse button	Desplazar la línea de tiempo arrastrando con el botón central del ratón
 	Disabled (Classic)	Desactivado (Clásico)
 	Timeline Playback Auto-Scrolling	Desplazamiento automático de la línea de tiempo al reproducir

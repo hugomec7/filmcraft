@@ -967,7 +967,7 @@ fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     assert_eq!(p.ctrl_scrolling, "horizontal");
     assert_eq!(p.ctrl_shift_scrolling, "vertical");
     assert_eq!(p.click_to_move_playhead, "rulerOnly");
-    assert_eq!(p.drag_playhead_line, "off");
+    assert_eq!(p.drag_playhead_line, "emptySpace");
     assert!(!p.ruler_drag_in_out);
     assert_eq!(p.program_wheel, "off");
     assert_eq!(p.source_wheel, "off");
@@ -1019,6 +1019,11 @@ fn timeline_wheel_can_resize_tracks_and_the_middle_button_pan_can_be_turned_off(
     let back = Preferences::from_value(s.prefs.to_value());
     assert_eq!(back.timeline.ctrl_shift_scrolling, "trackHeightAll");
     assert!(!back.timeline.middle_button_pan);
+    // the classic defaults: Ctrl + Shift + Alt over the tracks resizes all of them, Alt over the headers one
+    let classic = settings::TimelinePrefs::default();
+    assert_eq!(classic.wheel_action_at(true, true, true, false), "trackHeightAll");
+    assert_eq!(classic.wheel_action_at(false, true, false, true), "trackHeightOne");
+    assert_eq!(classic.wheel_action_at(false, true, false, false), "zoom", "Alt over the clips still zooms");
     // an unknown action is refused
     assert!(s.execute("prefs.set", json!({"key": "timeline.ctrlShiftScrolling", "value": "resizeEverything"})).is_err());
 }
@@ -1041,6 +1046,8 @@ fn timeline_choice_labels_name_no_other_product_and_mark_the_classic_defaults() 
         ("timeline.shiftScrolling", p.shift_scrolling.as_str()),
         ("timeline.ctrlScrolling", p.ctrl_scrolling.as_str()),
         ("timeline.ctrlShiftScrolling", p.ctrl_shift_scrolling.as_str()),
+        ("timeline.ctrlShiftAltScrolling", p.ctrl_shift_alt_scrolling.as_str()),
+        ("timeline.headerAltScrolling", p.header_alt_scrolling.as_str()),
     ] {
         let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
         let marked: Vec<&str> = opts.iter().filter(|(_, l)| l.contains("(Classic)")).map(|(v, _)| *v).collect();
