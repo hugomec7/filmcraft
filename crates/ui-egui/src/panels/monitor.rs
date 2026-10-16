@@ -430,15 +430,6 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     egui::Popup::menu(&wresp).show(|ui| {
         ui.set_min_width(240.0);
         monitor_view::wrench_items(app, ui, which);
-        ui.menu_button(tl!("Timeline mouse wheel behavior"), |ui| {
-            for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL {
-                if ui.selectable_label(wheel_mode == val, crate::i18n::t(label)).clicked() {
-                    let _ = app.session.execute("prefs.set", json!({"key": wheel_pref_key, "value": val}));
-                    ui.close();
-                }
-            }
-        });
-        ui.separator();
         let mv = monitor_view::view_mut(app, which);
         ui.checkbox(&mut mv.safe_margins, tl!("Safe Margins"));
         ui.checkbox(&mut mv.show_transport, tl!("Show Transport Controls"));
