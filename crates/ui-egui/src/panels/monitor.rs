@@ -291,7 +291,12 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     let pic_resp = ui.interact(pic, egui::Id::new((prefix, "pic")), if show_picture { Sense::click_and_drag() } else { Sense::hover() });
     app.auto.add(&format!("{prefix}.picture"), pic.intersect(video_area), "picture");
     // (Comparison View always fits both frames)
-    if show_picture && !compare {
+    let wheel_mode = if which == Which::Program { app.session.prefs.timeline.program_wheel.clone() } else { app.session.prefs.timeline.source_wheel.clone() };
+    // the wheel steps over the picture only if asked to (and not with a modifier: that zooms it)
+    let step_over_picture = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes")
+        && step_over_preview(app, which)
+        && ui.input(|i| !(i.modifiers.alt || i.modifiers.command || i.modifiers.ctrl || i.modifiers.shift));
+    if show_picture && !compare && !step_over_picture {
         monitor_view::zoom_pan_input(app, ui, which, video_area, pic, display_w, ppp);
     }
     if which == Which::Program && show_picture {
@@ -383,6 +388,33 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     let wresp = ui.interact(wr, egui::Id::new((prefix, "wrench")), Sense::click());
     icons::paint(ui.painter(), wr.shrink(4.0), Icon::Wrench, if wresp.hovered() { t.tab_text_active } else { t.icon });
     app.auto.add(&format!("{prefix}.settings"), wr, "Settings");
+    let wheel_pref_key = if which == Which::Program { "timeline.programWheel" } else { "timeline.sourceWheel" };
+    let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
+    let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
+    let wb_active = wheel_mode != "stepFrames";
+    let wb_resp =
+        crate::widgets::wheel_mode_button(ui, wbr, wb_active, &t, egui::Id::new((prefix, "wheel-mode"))).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+    app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline Mouse Wheel Behavior");
+    egui::Popup::menu(&wb_resp).show(|ui| {
+        ui.set_min_width(210.0);
+        ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
+        ui.separator();
+        for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
+            if ui.selectable_label(wheel_mode == val, crate::i18n::t(label)).clicked() {
+                let _ = app.session.execute("prefs.set", json!({"key": wheel_pref_key, "value": val}));
+                ui.close();
+            }
+        }
+        ui.separator();
+        let steps = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes");
+        let mut over = step_over_preview(app, which);
+        let key = if which == Which::Program { "timeline.programStepOverPreview" } else { "timeline.sourceStepOverPreview" };
+        let c = ui.add_enabled(steps, egui::Checkbox::new(&mut over, tl!("Also Step Over the Preview")));
+        app.auto.add(&format!("{prefix}.wheelMode.stepOverPreview"), c.rect, "Also Step Over the Preview");
+        if c.changed() {
+            let _ = app.session.execute("prefs.set", json!({"key": key, "value": over}));
+        }
+    });
     egui::Popup::menu(&wresp).show(|ui| {
         ui.set_min_width(240.0);
         monitor_view::wrench_items(app, ui, which);
@@ -437,6 +469,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     // ---- mini timeline / scrub bar
     let bar = Rect::from_min_size(pos2(rect.min.x + 14.0, settings_y + 28.0 + source_drag_h), vec2(rect.width() - 28.0, 22.0));
     let zoom_bar = Rect::from_min_size(pos2(bar.min.x, bar.max.y + 2.0), vec2(bar.width(), 13.0));
+    handle_monitor_wheel(app, ui, rect, row1, bar, which, origin, time, duration, rate, &wheel_mode);
     follow_playhead(app, which, origin, duration, time);
     time_zoom_bar(app, ui, zoom_bar, which, origin, duration, rate);
     mini_timeline(app, ui, bar, which, origin, time, duration, rate, mark_in, mark_out);
@@ -629,6 +662,153 @@ fn ruler_shown(zoom: Option<[f64; 2]>, origin: Tick, end: Tick) -> (Tick, Tick) 
     let len = end.0.saturating_sub(origin.0).max(0) as f64;
     let at = |f: f64| Tick(origin.0.saturating_add((f * len) as i64));
     (if s > 0.0 { at(s) } else { origin }, if e < 1.0 { at(e) } else { end })
+}
+
+/// "Also Step Over the Program (Source) Monitor Preview": the wheel steps over the picture too.
+fn step_over_preview(app: &FilmcraftApp, which: Which) -> bool {
+    let t = &app.session.prefs.timeline;
+    if which == Which::Program { t.program_step_over_preview } else { t.source_step_over_preview }
+}
+
+/// Mouse wheel over a monitor's timeline area (or over the picture too, when stepping frames/keyframes
+/// and "Also Step Over the Preview" is on; otherwise the picture takes the wheel to zoom itself).
+#[allow(clippy::too_many_arguments)]
+fn handle_monitor_wheel(
+    app: &mut FilmcraftApp,
+    ui: &egui::Ui,
+    rect: Rect,
+    row1: Rect,
+    bar: Rect,
+    which: Which,
+    origin: Tick,
+    time: Tick,
+    end: Tick,
+    rate: filmcraft_time::FrameRate,
+    wheel_mode: &str,
+) {
+    let ctx = ui.ctx();
+    let Some(p) = ctx.pointer_hover_pos() else { return };
+    if !ui.rect_contains_pointer(rect) {
+        return;
+    }
+    let in_lower = p.y >= row1.min.y;
+    let step_anywhere = matches!(wheel_mode, "stepFrames" | "stepKeyframes") && step_over_preview(app, which);
+    if !in_lower && !step_anywhere {
+        return;
+    }
+    let w = crate::panels::timeline::wheel_input(ctx);
+    let pinching = (w.pinch - 1.0).abs() > 1e-4;
+    if !pinching && w.delta == egui::Vec2::ZERO {
+        return;
+    }
+    let len = end.0.saturating_sub(origin.0).max(1) as f64;
+    let min_span = (rate.frame_duration().0.saturating_mul(MIN_ZOOM_FRAMES) as f64 / len).clamp(1e-6, 1.0);
+    let action = if pinching {
+        "zoom"
+    } else if w.alt || w.command || w.shift {
+        // Alt, Shift and Ctrl + wheel do what the Timeline's rows say, over the time ruler only
+        // (over the picture they zoom it)
+        match app.session.prefs.timeline.modifier_wheel(w.command, w.alt, w.shift) {
+            "zoom" if in_lower => "zoom",
+            "horizontal" if in_lower => "scroll",
+            "step" if in_lower => "stepFrames",
+            _ => "off",
+        }
+    } else if w.delta.x.abs() > w.delta.y.abs() && in_lower {
+        "scroll"
+    } else if wheel_mode == "horizontal" {
+        "scroll"
+    } else {
+        wheel_mode
+    };
+    match action {
+        "zoom" => {
+            let factor = if pinching { w.pinch as f64 } else { crate::panels::timeline_zoom::wheel_zoom_factor(w.delta.y as f64) };
+            let cursor_u = ((p.x - bar.min.x) / bar.width().max(1.0)).clamp(0.0, 1.0) as f64;
+            let playhead_f = (app.session.prefs.timeline.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
+                .then(|| ((time - origin).0 as f64 / len).clamp(0.0, 1.0));
+            let cur = monitor_view::view(app, which).time_zoom;
+            monitor_view::view_mut(app, which).time_zoom = crate::panels::timeline_zoom::zoom_fraction_range(cur, cursor_u, playhead_f, factor, min_span);
+            ctx.request_repaint();
+        }
+        "scroll" => {
+            let d = if w.delta.x.abs() > w.delta.y.abs() { w.delta.x } else { w.delta.y };
+            let cur = monitor_view::view(app, which).time_zoom;
+            monitor_view::view_mut(app, which).time_zoom = crate::panels::timeline_zoom::pan_fraction_range(cur, d as f64, f64::from(bar.width().max(1.0)));
+            ctx.request_repaint();
+        }
+        "stepFrames" => {
+            let d = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
+            if d != 0.0 {
+                let notches = ((-d / 40.0).round() as i64).clamp(-10, 10);
+                let step = if notches != 0 {
+                    notches
+                } else if d < 0.0 {
+                    1
+                } else {
+                    -1
+                };
+                let next = (time + Tick(rate.frame_duration().0.saturating_mul(step))).clamp(origin, end);
+                if which == Which::Program {
+                    app.stop();
+                    app.session.set_playhead(next);
+                } else {
+                    app.stop_source();
+                    let _ = app.session.execute("source.setPlayhead", json!({"time": next.0}));
+                }
+            }
+        }
+        "stepKeyframes" => {
+            let d = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
+            if d != 0.0
+                && let Some(next) = step_monitor_keyframe(app, which, time, d < 0.0)
+            {
+                if which == Which::Program {
+                    app.stop();
+                    app.session.set_playhead(next.clamp(origin, end));
+                } else {
+                    app.stop_source();
+                    let _ = app.session.execute("source.setPlayhead", json!({"time": next.0}));
+                }
+            }
+        }
+        _ => {}
+    }
+}
+
+/// Next or previous keyframe time for the monitor's timeline, `None` when there is none in that
+/// direction. Only keyframes count (never markers or In/Out marks): the keyframes of the selected
+/// clips, or of the clips under the playhead when nothing is selected. The Source Monitor has none.
+fn step_monitor_keyframe(app: &FilmcraftApp, which: Which, time: Tick, forward: bool) -> Option<Tick> {
+    if which != Which::Program {
+        return None;
+    }
+    let seq = app.session.active_sequence()?;
+    let sel = &app.session.state.selection;
+    let mut cands: Vec<Tick> = Vec::new();
+    for tr in seq.all_tracks() {
+        for it in &tr.items {
+            let wanted = if sel.is_empty() { it.start <= time && time <= it.end() } else { sel.contains(&it.id) };
+            if !wanted {
+                continue;
+            }
+            let speed = it.speed.abs().max(1e-6);
+            for eff in &it.effects {
+                for p in eff.params.values() {
+                    for kf in &p.keyframes {
+                        let off = if it.reverse { it.source_out() - kf.time - Tick(1) } else { kf.time - it.source_in };
+                        let tl = it.start + Tick((off.0 as f64 / speed).round() as i64);
+                        if tl >= it.start && tl <= it.end() {
+                            cands.push(tl);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    cands.sort_unstable();
+    cands.dedup();
+    if forward { cands.into_iter().find(|&t| t > time + Tick(1)) } else { cands.into_iter().rev().find(|&t| t + Tick(1) < time) }
 }
 
 /// While the monitor plays, a zoomed time ruler follows the playhead `time` the way the Timeline

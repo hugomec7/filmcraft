@@ -2535,9 +2535,34 @@
 	Timecode Conversion	タイムコード変換
 	Timeline Mouse Scrolling	タイムラインのマウススクロール
 	Scroll to zoom on timeline	マウスホイールでタイムラインをズーム
-	Zoom anchor point	ズームのアンカーポイント
-	Cursor position	カーソル位置
-	Playhead position	再生ヘッドの位置
+	Zoom Anchor Point	ズームのアンカーポイント
+	Cursor Position	カーソル位置
+	Playhead Position	再生ヘッドの位置
+	Step Playhead (Frames)	再生ヘッドをコマ送り（フレーム）
+	Disabled	無効
+	Alt + Scroll	Alt + スクロール
+	Shift + Scroll	Shift + スクロール
+	Ctrl + Scroll	Ctrl + スクロール
+	Playhead and Time Ruler	再生ヘッドとタイムルーラー
+	Move Playhead on Timeline Click	タイムラインのクリックで再生ヘッドを移動
+	Ruler Only	タイムルーラーのみ
+	Empty Space Only	空きスペースのみ
+	Anywhere on Timeline	タイムライン上のどこでも
+	Drag Playhead Line Across Tracks	トラック上で再生ヘッドの線をドラッグ
+	Anywhere, Including Over Clips	クリップ上を含むどこでも
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
+	Other Timelines Mouse Wheel	他のタイムラインでのマウスホイール
+	Program Monitor Timeline Wheel	プログラムモニターのタイムラインホイール
+	Source Monitor Timeline Wheel	ソースモニターのタイムラインホイール
+	Effect Controls Timeline Wheel	エフェクトコントロールのタイムラインホイール
+	Also Step Over the Program Monitor Preview	プログラムモニターのプレビュー上でもフレーム送りする
+	Also Step Over the Source Monitor Preview	ソースモニターのプレビュー上でもフレーム送りする
+	Also Step Over the Preview	プレビュー上でもフレーム送りする
+	Timeline Mouse Wheel Behavior	タイムラインのマウスホイール動作
+	Step Frames	フレーム送り
+	Step Keyframes	キーフレーム送り
+	Off (Ruler Head Only)	オフ（ルーラーのヘッドのみ）
+	Pan Timeline by Dragging With Middle Mouse Button	マウスの中ボタンのドラッグでタイムラインをパンする
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール
 	Tint Color	色合い
 	To	変更先

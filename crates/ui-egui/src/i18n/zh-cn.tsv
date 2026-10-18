@@ -3585,3 +3585,31 @@
 	Shows the version, community links and credits in a FilmCraft window.	在 FilmCraft 窗口中显示版本、社区链接和致谢。
 	Couldn't open your web browser	无法打开网页浏览器
 	Open this address in your browser yourself:	请自行在浏览器中打开此地址：
+	Step Playhead (Frames)	步进播放头（帧）
+	Disabled	禁用
+	Alt + Scroll	Alt + 滚轮
+	Shift + Scroll	Shift + 滚轮
+	Ctrl + Scroll	Ctrl + 滚轮
+	Playhead and Time Ruler	播放头与时间标尺
+	Move Playhead on Timeline Click	点击时间轴时移动播放头
+	Ruler Only	仅时间标尺
+	Empty Space Only	仅空白区域
+	Anywhere on Timeline	时间轴任意位置
+	Drag Playhead Line Across Tracks	在轨道上拖动播放头线
+	Anywhere, Including Over Clips	任意位置，包括片段上方
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	分割时间标尺：拖动上半部分设置入点/出点范围
+	Other Timelines Mouse Wheel	其他时间轴鼠标滚轮
+	Program Monitor Timeline Wheel	节目监视器时间轴滚轮
+	Source Monitor Timeline Wheel	源监视器时间轴滚轮
+	Effect Controls Timeline Wheel	效果控件时间轴滚轮
+	Also Step Over the Program Monitor Preview	在节目监视器预览上也逐帧移动
+	Also Step Over the Source Monitor Preview	在源监视器预览上也逐帧移动
+	Also Step Over the Preview	在预览上也逐帧移动
+	Timeline Mouse Wheel Behavior	时间轴鼠标滚轮行为
+	Zoom Anchor Point	缩放锚点
+	Cursor Position	光标位置
+	Playhead Position	播放头位置
+	Step Frames	逐帧移动
+	Step Keyframes	逐关键帧移动
+	Off (Ruler Head Only)	关闭（仅标尺磁头）
+	Pan Timeline by Dragging With Middle Mouse Button	按住鼠标中键拖动以平移时间轴
