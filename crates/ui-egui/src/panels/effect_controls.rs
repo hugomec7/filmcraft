@@ -424,16 +424,20 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
     let action = if pinching {
         "zoom"
-    } else if w.alt && matches!(app.session.prefs.timeline.alt_scrolling.as_str(), "zoom" | "auto") {
-        "zoom"
-    } else if (w.shift || w.alt) && mode == "zoom" {
+    } else if w.alt || w.command || w.shift {
+        // Alt, Shift and Ctrl + wheel do what the Timeline's rows say
+        match app.session.prefs.timeline.modifier_wheel(w.command, w.alt, w.shift) {
+            "zoom" => "zoom",
+            "horizontal" => "scroll",
+            "step" => "stepFrames",
+            _ => "off",
+        }
+    } else if w.delta.x.abs() > w.delta.y.abs() {
         "scroll"
-    } else if !(w.alt || w.command || w.shift) && w.delta.x.abs() > w.delta.y.abs() {
+    } else if mode == "horizontal" {
         "scroll"
-    } else if !(w.alt || w.command || w.shift) {
-        if mode == "horizontal" { "scroll" } else { mode.as_str() }
     } else {
-        "off"
+        mode.as_str()
     };
     if action == "off" {
         return;
@@ -524,14 +528,14 @@ fn ec_footer_controls(
     let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
     if split - rect.min.x > 140.0 {
         let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 25.0), vec2(22.0, 22.0));
-        let resp =
-            crate::widgets::wheel_mode_button(ui, br, mode != "off", t, egui::Id::new("ec-wheel-mode")).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
+        let resp = crate::widgets::wheel_mode_button(ui, br, mode != "stepFrames", t, egui::Id::new("ec-wheel-mode"))
+            .on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
         app.auto.add("effectControls.wheelMode", br, "Timeline Mouse Wheel Behavior");
         egui::Popup::menu(&resp).show(|ui| {
             ui.set_min_width(210.0);
             ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
             ui.separator();
-            for &(val, text) in filmcraft_engine::settings::PANEL_WHEEL {
+            for &(val, text) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
                 if ui.selectable_label(mode == val, crate::i18n::t(text)).clicked() {
                     let _ = app.session.execute("prefs.set", json!({"key": "timeline.effectControlsWheel", "value": val}));
                     ui.close();

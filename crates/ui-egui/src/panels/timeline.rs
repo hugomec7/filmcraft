@@ -1517,7 +1517,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                 ui.set_min_width(210.0);
                 ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
                 ui.separator();
-                for &(val, label) in filmcraft_engine::settings::MOUSE_SCROLL_BARE {
+                for &(val, label) in filmcraft_engine::settings::MOUSE_SCROLL.iter().filter(|(v, _)| *v != "off") {
                     let c = ui.selectable_label(wheel_now == val, crate::i18n::t(label));
                     app.auto.add(&format!("timeline.wheelMode.{val}"), c.rect, label);
                     if c.clicked() {
@@ -2377,12 +2377,19 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             zoom_timeline(app, layout, p.x, w.pinch as f64, anchor);
             ctx.request_repaint();
         } else if w.delta != egui::Vec2::ZERO {
+            let over_tracks = p.y >= layout.content.min.y && p.y < layout.content.max.y - MASTER_H;
             let action = if !(w.command || w.alt || w.shift) && w.delta.x.abs() > w.delta.y.abs() {
                 "horizontal".to_string()
             } else if !(w.command || w.alt || w.shift) && !area.contains(p) {
                 "vertical".to_string()
+            } else if over_tracks && w.alt && !w.command && !w.shift && p.x < layout.content.min.x {
+                // Alt + wheel over a track header resizes that track, whatever Alt + Scroll is set to
+                "trackHeightOne".to_string()
+            } else if over_tracks && w.command && w.shift && !w.alt {
+                // Ctrl + Shift + wheel over the video (or audio) tracks resizes all of them
+                "trackHeightAll".to_string()
             } else {
-                app.session.prefs.timeline.wheel_action_at(w.command, w.alt, w.shift, p.x < layout.content.min.x).to_string()
+                app.session.prefs.timeline.wheel_action(w.command, w.alt, w.shift).to_string()
             };
             match action.as_str() {
                 "zoom" if w.delta.y != 0.0 => {
@@ -2424,7 +2431,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 // wheel up makes the tracks taller, wheel down shorter: every track of the half under the
                 // pointer (video above the divider, audio below it), or only the one under the pointer
-                "trackHeightAll" | "trackHeightOne" if w.delta.y != 0.0 && p.y >= layout.content.min.y && p.y < layout.content.max.y - MASTER_H => {
+                "trackHeightAll" | "trackHeightOne" if w.delta.y != 0.0 => {
                     let video = p.y < layout.split_y;
                     let step = (w.delta.y * 0.25).clamp(-TRACK_H_STEP_MAX, TRACK_H_STEP_MAX);
                     let tv = &mut app.ui.timeline;
@@ -3312,6 +3319,11 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
         }
     }
     app.auto.add("timeline.tracks", layout.content, "tracks");
+    app.auto.add(
+        "timeline.headers",
+        Rect::from_min_max(pos2(rect.min.x, layout.content.min.y), pos2(layout.content.min.x, layout.content.max.y)),
+        "track headers",
+    );
 }
 
 /// #374: trimming an audio clip must cut its waveform off at the moving edge, not squeeze the whole

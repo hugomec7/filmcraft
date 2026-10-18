@@ -80,7 +80,12 @@ impl Driver {
     /// Turn the wheel over the tracks (`fy`: 0.2 is among the video tracks, 0.8 among the audio
     /// tracks), with modifiers.
     fn wheel(&mut self, fy: f64, dx: f64, dy: f64, modifiers: Value) {
-        self.ok("ui.scroll", json!({"id": "timeline.tracks", "fx": 0.5, "fy": fy, "dx": dx, "dy": dy, "modifiers": modifiers}));
+        self.wheel_on("timeline.tracks", fy, dx, dy, modifiers);
+    }
+
+    /// The same over another part of the Timeline: `timeline.headers` is the column of track headers.
+    fn wheel_on(&mut self, id: &str, fy: f64, dx: f64, dy: f64, modifiers: Value) {
+        self.ok("ui.scroll", json!({"id": id, "fx": 0.5, "fy": fy, "dx": dx, "dy": dy, "modifiers": modifiers}));
         self.frames(3);
     }
 
@@ -450,8 +455,7 @@ fn repeated_start_and_end_commands_reveal_a_playhead_already_at_the_endpoint() {
     repeated_endpoint_navigation_reveals_the_same_playhead(false);
 }
 
-/// Settings ▸ Timeline ▸ "Ctrl + Shift + Scroll" set to "Track height: all video or all audio
-/// tracks": the wheel over the video tracks sizes all of them, over the audio tracks all of those.
+/// Ctrl + Shift + wheel over the video tracks sizes all of them, over the audio tracks all of those.
 #[test]
 fn the_wheel_can_resize_all_video_or_all_audio_tracks_by_the_pointer() {
     let mut d = Driver::tall();
@@ -471,23 +475,28 @@ fn the_wheel_can_resize_all_video_or_all_audio_tracks_by_the_pointer() {
     assert!(d.app().ui.timeline.audio_track_h >= 20.0, "never smaller than the minimum");
 }
 
-/// "Alt + Scroll" set to "Track height: only the track under the pointer" sizes one track.
+/// Alt + wheel over a track header sizes that track alone, whatever "Alt + Scroll" is set to; over
+/// the clips it zooms, as the setting says.
 #[test]
-fn the_wheel_can_resize_only_the_track_under_the_pointer() {
+fn alt_wheel_over_a_track_header_resizes_only_that_track() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.alt_scrolling = "trackHeightOne".into();
+    d.app().session.prefs.timeline.alt_scrolling = "horizontal".into();
     let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
-    d.wheel(0.2, 0.0, 40.0, json!({"alt": true}));
+    let before = d.view();
+    d.wheel_on("timeline.headers", 0.2, 0.0, 40.0, json!({"alt": true}));
     let tv = &d.app().ui.timeline;
     assert_eq!((tv.video_track_h, tv.audio_track_h), (v0, a0), "the shared heights do not change");
     assert_eq!(tv.track_h_override.len(), 1, "one track has its own height");
     assert!(tv.track_h_override.values().all(|h| *h > v0));
+    assert_eq!(d.view().1, before.1, "the zoom did not change");
+    d.wheel(0.2, 0.0, 40.0, json!({"alt": true}));
+    assert_eq!(d.app().ui.timeline.track_h_override.len(), 1, "over the clips Alt + wheel does not resize a track");
 }
 
-/// Default: Ctrl + Shift + wheel over the tracks resizes all video tracks, or all audio tracks,
-/// depending on the half the pointer is in; Ctrl + Shift + Alt + wheel does nothing.
+/// Ctrl + Shift + wheel resizes all video tracks, or all audio tracks, depending on the half the
+/// pointer is in (over the headers or the clips); Ctrl + Shift + Alt + wheel does nothing.
 #[test]
-fn ctrl_shift_wheel_resizes_all_tracks_of_the_half_under_the_pointer_by_default() {
+fn ctrl_shift_wheel_resizes_all_tracks_of_the_half_under_the_pointer() {
     let mut d = Driver::tall();
     let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
     d.wheel(0.2, 0.0, 40.0, json!({"command": true, "shift": true, "alt": true}));
@@ -496,6 +505,6 @@ fn ctrl_shift_wheel_resizes_all_tracks_of_the_half_under_the_pointer_by_default(
     d.wheel(0.2, 0.0, 40.0, both.clone());
     let (v1, a1) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
     assert!(v1 > v0 && a1 == a0, "video tracks taller, audio untouched: {v0} -> {v1}, {a0} -> {a1}");
-    d.wheel(0.8, 0.0, 40.0, both);
-    assert!(d.app().ui.timeline.audio_track_h > a1);
+    d.wheel_on("timeline.headers", 0.8, 0.0, 40.0, both);
+    assert!(d.app().ui.timeline.audio_track_h > a1, "over the audio track headers the audio tracks grow");
 }
