@@ -2549,11 +2549,10 @@
 	Drag Playhead Line Across Tracks	トラック上で再生ヘッドの線をドラッグ
 	Anywhere, Including Over Clips	クリップ上を含むどこでも
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
-	Program Monitor Timeline Wheel	プログラムモニターのタイムラインホイール
-	Source Monitor Timeline Wheel	ソースモニターのタイムラインホイール
-	Effect Controls Timeline Wheel	エフェクトコントロールのタイムラインホイール
-	Also Step Over the Program Monitor Preview	プログラムモニターのプレビュー上でもフレーム送りする
-	Also Step Over the Source Monitor Preview	ソースモニターのプレビュー上でもフレーム送りする
+	Program Monitor Mouse Wheel	プログラムモニターのマウスホイール
+	Source Monitor Mouse Wheel	ソースモニターのマウスホイール
+	Effect Controls Mouse Wheel	エフェクトコントロールのマウスホイール
+	Scroll	スクロール
 	Also Step Over the Preview	プレビュー上でもフレーム送りする
 	Timeline Mouse Wheel Behavior	タイムラインのマウスホイール動作
 	Step Frames	フレーム送り
@@ -3640,5 +3639,4 @@
 	Alternative	代替
 	Timeline Mouse Wheel	タイムラインのマウスホイール
 	Timeline Clicks and Drags	タイムラインのクリックとドラッグ
-	Monitors and Effect Controls Mouse Wheel	モニターとエフェクトコントロールのマウスホイール
 	More Settings…	その他の設定…

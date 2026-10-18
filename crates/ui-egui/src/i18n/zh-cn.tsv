@@ -3597,11 +3597,10 @@
 	Drag Playhead Line Across Tracks	在轨道上拖动播放头线
 	Anywhere, Including Over Clips	任意位置，包括片段上方
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	分割时间标尺：拖动上半部分设置入点/出点范围
-	Program Monitor Timeline Wheel	节目监视器时间轴滚轮
-	Source Monitor Timeline Wheel	源监视器时间轴滚轮
-	Effect Controls Timeline Wheel	效果控件时间轴滚轮
-	Also Step Over the Program Monitor Preview	在节目监视器预览上也逐帧移动
-	Also Step Over the Source Monitor Preview	在源监视器预览上也逐帧移动
+	Program Monitor Mouse Wheel	节目监视器鼠标滚轮
+	Source Monitor Mouse Wheel	源监视器鼠标滚轮
+	Effect Controls Mouse Wheel	效果控件鼠标滚轮
+	Scroll	滚动
 	Also Step Over the Preview	在预览上也逐帧移动
 	Timeline Mouse Wheel Behavior	时间轴鼠标滚轮行为
 	Zoom Anchor Point	缩放锚点
@@ -3616,5 +3615,4 @@
 	Alternative	备选
 	Timeline Mouse Wheel	时间轴鼠标滚轮
 	Timeline Clicks and Drags	时间轴点击与拖动
-	Monitors and Effect Controls Mouse Wheel	监视器与效果控件鼠标滚轮
 	More Settings…	更多设置…

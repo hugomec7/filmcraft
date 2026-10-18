@@ -2563,11 +2563,10 @@
 	Drag Playhead Line Across Tracks	Arrastrar la Línea del Cabezal sobre las Pistas
 	Anywhere, Including Over Clips	En Cualquier Lugar, Incluso sobre Clips
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir Regla de Tiempo: Arrastrar en la Mitad Superior Define Entrada/Salida
-	Program Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Programa
-	Source Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Origen
-	Effect Controls Timeline Wheel	Rueda en la Línea de Tiempo de Controles de Efectos
-	Also Step Over the Program Monitor Preview	También Avanzar Sobre la Vista Previa del Monitor de Programa
-	Also Step Over the Source Monitor Preview	También Avanzar Sobre la Vista Previa del Monitor de Origen
+	Program Monitor Mouse Wheel	Rueda del Ratón en el Monitor de Programa
+	Source Monitor Mouse Wheel	Rueda del Ratón en el Monitor de Origen
+	Effect Controls Mouse Wheel	Rueda del Ratón en Controles de Efectos
+	Scroll	Rueda
 	Also Step Over the Preview	También Avanzar Sobre la Vista Previa
 	Timeline Mouse Wheel Behavior	Comportamiento de la Rueda del Ratón en la Línea de Tiempo
 	Step Frames	Avanzar Fotogramas
@@ -3641,5 +3640,4 @@
 	Alternative	Alternativo
 	Timeline Mouse Wheel	Rueda del Ratón en la Línea de Tiempo
 	Timeline Clicks and Drags	Clics y Arrastres en la Línea de Tiempo
-	Monitors and Effect Controls Mouse Wheel	Rueda del Ratón en Monitores y Controles de Efectos
 	More Settings…	Más Ajustes…

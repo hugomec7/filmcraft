@@ -806,19 +806,31 @@ pub struct NavigationPrefs {
     /// "Split Time Ruler: Drag Upper Half to Set In/Out Range": upper half of the time ruler
     /// drags/edits the sequence In/Out range while the lower half scrubs the playhead.
     pub ruler_drag_in_out: bool,
-    /// "Program Monitor Timeline Wheel": `off` | `horizontal` | `zoom` | `stepFrames` | `stepKeyframes`
-    /// (default `stepFrames`): what the wheel does over the monitor's time ruler.
+    /// Program Monitor ▸ "Scroll": `off` | `horizontal` | `zoom` | `stepFrames` | `stepKeyframes`
+    /// (default `stepFrames`): what the bare wheel does over the monitor's time ruler.
     pub program_wheel: String,
-    /// "Source Monitor Timeline Wheel": the same.
+    /// Program Monitor ▸ "Alt + Scroll" (default `zoom`), "Shift + Scroll" and "Ctrl + Scroll"
+    /// (default `horizontal`): the same choices, over the time ruler (over the picture a modifier
+    /// zooms it).
+    pub program_alt_wheel: String,
+    pub program_shift_wheel: String,
+    pub program_ctrl_wheel: String,
+    /// Source Monitor ▸ the same four.
     pub source_wheel: String,
-    /// "Effect Controls Timeline Wheel": the same (over the keyframe lane; over the properties the
-    /// wheel scrolls them).
+    pub source_alt_wheel: String,
+    pub source_shift_wheel: String,
+    pub source_ctrl_wheel: String,
+    /// Effect Controls ▸ the same four (over the keyframe lane; over the properties the wheel
+    /// scrolls them).
     pub effect_controls_wheel: String,
-    /// "Also Step Over the Program Monitor Preview": with `stepFrames` / `stepKeyframes` the wheel
+    pub effect_controls_alt_wheel: String,
+    pub effect_controls_shift_wheel: String,
+    pub effect_controls_ctrl_wheel: String,
+    /// Program Monitor ▸ "Also Step Over the Preview": with `stepFrames` / `stepKeyframes` the wheel
     /// also steps over the picture (Ctrl, Shift or Alt + wheel still zooms it). Off: over the
     /// picture the wheel zooms it, as in Premiere.
     pub program_step_over_preview: bool,
-    /// "Also Step Over the Source Monitor Preview": the same for the Source Monitor.
+    /// Source Monitor ▸ "Also Step Over the Preview": the same for the Source Monitor.
     pub source_step_over_preview: bool,
     /// "Pan Timeline by Dragging With Middle Mouse Button" (on = the classic behaviour).
     pub middle_button_pan: bool,
@@ -835,8 +847,17 @@ impl Default for NavigationPrefs {
             drag_playhead_line: "emptySpace".into(),
             ruler_drag_in_out: false,
             program_wheel: "stepFrames".into(),
+            program_alt_wheel: "zoom".into(),
+            program_shift_wheel: "horizontal".into(),
+            program_ctrl_wheel: "horizontal".into(),
             source_wheel: "stepFrames".into(),
+            source_alt_wheel: "zoom".into(),
+            source_shift_wheel: "horizontal".into(),
+            source_ctrl_wheel: "horizontal".into(),
             effect_controls_wheel: "stepFrames".into(),
+            effect_controls_alt_wheel: "zoom".into(),
+            effect_controls_shift_wheel: "horizontal".into(),
+            effect_controls_ctrl_wheel: "horizontal".into(),
             program_step_over_preview: false,
             source_step_over_preview: false,
             middle_button_pan: true,
@@ -865,20 +886,28 @@ impl NavigationPrefs {
         }
     }
 
-    /// What Alt, Shift or Ctrl + wheel does over the time ruler of the Program and Source Monitors
-    /// and of Effect Controls: the same actions as on the Timeline, set in the same rows.
-    pub fn modifier_wheel(&self, ctrl: bool, alt: bool, shift: bool) -> &str {
+    /// What the wheel, bare or with Alt, Shift or Ctrl, does over the time ruler of a panel:
+    /// `"program"`, `"source"` or `"effectControls"`. One of [`PANEL_WHEEL`]'s values; Ctrl + Shift
+    /// (or + Alt) does nothing, and a value an older version saved falls back to the default.
+    pub fn panel_wheel(&self, panel: &str, ctrl: bool, alt: bool, shift: bool) -> &str {
+        let (bare, a, s, c) = match panel {
+            "program" => (&self.program_wheel, &self.program_alt_wheel, &self.program_shift_wheel, &self.program_ctrl_wheel),
+            "source" => (&self.source_wheel, &self.source_alt_wheel, &self.source_shift_wheel, &self.source_ctrl_wheel),
+            _ => (&self.effect_controls_wheel, &self.effect_controls_alt_wheel, &self.effect_controls_shift_wheel, &self.effect_controls_ctrl_wheel),
+        };
         if ctrl && shift {
-            "off"
-        } else if ctrl {
-            wheel_choice(&self.ctrl_scrolling, "horizontal")
-        } else if alt {
-            wheel_choice(&self.alt_scrolling, "zoom")
-        } else if shift {
-            wheel_choice(&self.shift_scrolling, "horizontal")
-        } else {
-            "off"
+            return "off";
         }
+        let (value, fallback) = if ctrl {
+            (c.as_str(), "horizontal")
+        } else if alt {
+            (a.as_str(), "zoom")
+        } else if shift {
+            (s.as_str(), "horizontal")
+        } else {
+            (bare.as_str(), "stepFrames")
+        };
+        if PANEL_WHEEL.iter().any(|(x, _)| *x == value) { value } else { fallback }
     }
 
     /// The navigation style these settings (with the bare wheel `mouse_scrolling`) match:
@@ -923,6 +952,7 @@ pub fn navigation_style_preset(id: &str) -> Option<(NavigationPrefs, &'static st
                 program_step_over_preview: false,
                 source_step_over_preview: false,
                 middle_button_pan: true,
+                ..NavigationPrefs::default()
             },
             "zoom",
         )),
@@ -1554,13 +1584,32 @@ static CATEGORIES: &[Category] = &[
                 ],
             ),
             Row::Group(
-                "Monitors and Effect Controls Mouse Wheel",
+                "Program Monitor Mouse Wheel",
                 &[
-                    f("navigation.programWheel", "Program Monitor Timeline Wheel", Kind::Choice(PANEL_WHEEL), true),
-                    b("navigation.programStepOverPreview", "Also Step Over the Program Monitor Preview", true),
-                    f("navigation.sourceWheel", "Source Monitor Timeline Wheel", Kind::Choice(PANEL_WHEEL), true),
-                    b("navigation.sourceStepOverPreview", "Also Step Over the Source Monitor Preview", true),
-                    f("navigation.effectControlsWheel", "Effect Controls Timeline Wheel", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.programWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.programAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.programShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.programCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    b("navigation.programStepOverPreview", "Also Step Over the Preview", true),
+                ],
+            ),
+            Row::Group(
+                "Source Monitor Mouse Wheel",
+                &[
+                    f("navigation.sourceWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.sourceAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.sourceShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.sourceCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    b("navigation.sourceStepOverPreview", "Also Step Over the Preview", true),
+                ],
+            ),
+            Row::Group(
+                "Effect Controls Mouse Wheel",
+                &[
+                    f("navigation.effectControlsWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.effectControlsAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.effectControlsShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.effectControlsCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
                 ],
             ),
         ],

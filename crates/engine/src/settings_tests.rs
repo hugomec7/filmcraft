@@ -974,10 +974,18 @@ fn navigation_wheel_playhead_and_panel_settings_round_trip() {
     assert_eq!(s.prefs.wheel_action(false, true, false), "horizontal");
     assert_eq!(s.prefs.wheel_action(false, false, true), "vertical");
     assert_eq!(s.prefs.wheel_action(true, false, false), "step");
-    // the panels follow the same rows
-    assert_eq!(s.prefs.navigation.modifier_wheel(false, true, false), "horizontal");
-    assert_eq!(s.prefs.navigation.modifier_wheel(false, false, true), "vertical");
-    assert_eq!(s.prefs.navigation.modifier_wheel(true, false, false), "step");
+    // each panel has its own wheel rows
+    set(&mut s, "navigation.sourceWheel", json!("zoom"));
+    set(&mut s, "navigation.sourceShiftWheel", json!("stepFrames"));
+    set(&mut s, "navigation.programCtrlWheel", json!("stepKeyframes"));
+    set(&mut s, "navigation.effectControlsAltWheel", json!("off"));
+    let n = &s.prefs.navigation;
+    assert_eq!(n.panel_wheel("source", false, false, false), "zoom");
+    assert_eq!(n.panel_wheel("source", false, false, true), "stepFrames");
+    assert_eq!(n.panel_wheel("program", false, false, true), "horizontal", "the other panels keep theirs");
+    assert_eq!(n.panel_wheel("program", true, false, false), "stepKeyframes");
+    assert_eq!(n.panel_wheel("effectControls", false, true, false), "off");
+    assert_eq!(n.panel_wheel("source", false, true, false), "zoom");
     assert_eq!(s.prefs.navigation.click_to_move_playhead, "anywhere");
     assert_eq!(s.prefs.navigation.drag_playhead_line, "emptySpace");
     assert!(s.prefs.navigation.ruler_drag_in_out);
@@ -1012,7 +1020,9 @@ fn middle_button_pan_can_be_turned_off_and_resizing_tracks_is_not_a_setting() {
     let defaults = Preferences::default();
     for (ctrl, alt, shift) in [(true, false, true), (true, true, true)] {
         assert_eq!(defaults.wheel_action(ctrl, alt, shift), "off");
-        assert_eq!(defaults.navigation.modifier_wheel(ctrl, alt, shift), "off");
+        for panel in ["program", "source", "effectControls"] {
+            assert_eq!(defaults.navigation.panel_wheel(panel, ctrl, alt, shift), "off");
+        }
     }
     // unknown saved values fall back to the defaults instead of doing nothing
     let old = settings::NavigationPrefs {
@@ -1025,7 +1035,9 @@ fn middle_button_pan_can_be_turned_off_and_resizing_tracks_is_not_a_setting() {
     assert_eq!(old.wheel_action("vertical", false, true, false), "zoom");
     assert_eq!(old.wheel_action("vertical", false, false, true), "horizontal");
     assert_eq!(old.wheel_action("vertical", true, false, false), "horizontal");
-    assert_eq!(old.modifier_wheel(false, true, false), "zoom");
+    let old = settings::NavigationPrefs { program_alt_wheel: "trackHeightOne".into(), source_wheel: "scroll".into(), ..Default::default() };
+    assert_eq!(old.panel_wheel("program", false, true, false), "zoom");
+    assert_eq!(old.panel_wheel("source", false, false, false), "stepFrames");
 }
 
 /// Settings ▸ Navigation ▸ Navigation Style: Default is what a new install does, Alternative sets
@@ -1112,12 +1124,17 @@ fn the_wheel_rows_offer_no_track_resizing_and_the_panels_step_frames_by_default(
         assert_eq!(options(key), ["vertical", "horizontal", "zoom", "step", "off"], "{key}");
     }
     let defaults = settings::NavigationPrefs::default();
-    assert_eq!(defaults.modifier_wheel(true, false, false), "horizontal");
-    assert_eq!(defaults.modifier_wheel(false, true, false), "zoom");
-    assert_eq!(defaults.modifier_wheel(false, false, true), "horizontal");
-    assert_eq!(defaults.modifier_wheel(false, false, false), "off");
-    for key in ["navigation.programWheel", "navigation.sourceWheel", "navigation.effectControlsWheel"] {
-        assert_eq!(options(key), ["horizontal", "zoom", "stepFrames", "stepKeyframes", "off"], "{key}");
+    for panel in ["program", "source", "effectControls"] {
+        assert_eq!(defaults.panel_wheel(panel, false, false, false), "stepFrames", "{panel}");
+        assert_eq!(defaults.panel_wheel(panel, true, false, false), "horizontal", "{panel}");
+        assert_eq!(defaults.panel_wheel(panel, false, true, false), "zoom", "{panel}");
+        assert_eq!(defaults.panel_wheel(panel, false, false, true), "horizontal", "{panel}");
+    }
+    for panel in ["program", "source", "effectControls"] {
+        for row in ["Wheel", "AltWheel", "ShiftWheel", "CtrlWheel"] {
+            let key = format!("navigation.{panel}{row}");
+            assert_eq!(options(&key), ["horizontal", "zoom", "stepFrames", "stepKeyframes", "off"], "{key}");
+        }
     }
     for (_, f) in settings::fields().into_iter().filter(|(_, f)| f.key.starts_with("timeline.") || f.key.starts_with("navigation.")) {
         assert!(!f.label.contains("Resize"), "{}", f.label);

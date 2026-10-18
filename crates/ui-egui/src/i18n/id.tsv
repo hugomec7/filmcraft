@@ -3590,11 +3590,10 @@
 	Drag Playhead Line Across Tracks	Seret Garis Playhead Melintasi Trek
 	Anywhere, Including Over Clips	Di Mana Saja, Termasuk di Atas Klip
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	Penggaris Waktu Terbagi: Seret Bagian Atas untuk Menetapkan In/Out
-	Program Monitor Timeline Wheel	Roda di Timeline Monitor Program
-	Source Monitor Timeline Wheel	Roda di Timeline Monitor Sumber
-	Effect Controls Timeline Wheel	Roda di Timeline Kontrol Efek
-	Also Step Over the Program Monitor Preview	Juga Geser di Atas Pratinjau Monitor Program
-	Also Step Over the Source Monitor Preview	Juga Geser di Atas Pratinjau Monitor Sumber
+	Program Monitor Mouse Wheel	Roda Mouse di Monitor Program
+	Source Monitor Mouse Wheel	Roda Mouse di Monitor Sumber
+	Effect Controls Mouse Wheel	Roda Mouse di Kontrol Efek
+	Scroll	Gulir
 	Also Step Over the Preview	Juga Geser di Atas Pratinjau
 	Timeline Mouse Wheel Behavior	Perilaku Roda Mouse di Timeline
 	Step Frames	Geser per Frame
@@ -3606,5 +3605,4 @@
 	Alternative	Alternatif
 	Timeline Mouse Wheel	Roda Mouse di Timeline
 	Timeline Clicks and Drags	Klik dan Seret di Timeline
-	Monitors and Effect Controls Mouse Wheel	Roda Mouse di Monitor dan Kontrol Efek
 	More Settings…	Pengaturan Lainnya…

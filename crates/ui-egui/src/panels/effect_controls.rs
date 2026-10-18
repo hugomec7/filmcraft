@@ -425,11 +425,12 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     let action = if pinching {
         "zoom"
     } else if w.alt || w.command || w.shift {
-        // Alt, Shift and Ctrl + wheel do what the Timeline's rows say
-        match app.session.prefs.navigation.modifier_wheel(w.command, w.alt, w.shift) {
+        // Alt, Shift and Ctrl + wheel do what Settings ▸ Navigation says for Effect Controls
+        match app.session.prefs.navigation.panel_wheel("effectControls", w.command, w.alt, w.shift) {
             "zoom" => "zoom",
             "horizontal" => "scroll",
-            "step" => "stepFrames",
+            "stepFrames" => "stepFrames",
+            "stepKeyframes" => "stepKeyframes",
             _ => "off",
         }
     } else if w.delta.x.abs() > w.delta.y.abs() || mode == "horizontal" {

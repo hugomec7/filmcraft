@@ -2562,11 +2562,10 @@
 	Drag Playhead Line Across Tracks	Arrastar a Linha da Agulha pelas Faixas
 	Anywhere, Including Over Clips	Em Qualquer Lugar, Mesmo sobre Clipes
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir Régua de Tempo: Arrastar na Faixa Superior Cria Entrada/Saída (In/Out)
-	Program Monitor Timeline Wheel	Scroll na Linha do Tempo do Monitor de Programa
-	Source Monitor Timeline Wheel	Scroll na Linha do Tempo do Monitor de Origem (Source)
-	Effect Controls Timeline Wheel	Scroll na Linha do Tempo dos Controles de Efeitos
-	Also Step Over the Program Monitor Preview	Também Avançar Sobre o Preview do Monitor de Programa
-	Also Step Over the Source Monitor Preview	Também Avançar Sobre o Preview do Monitor de Origem (Source)
+	Program Monitor Mouse Wheel	Roda do Mouse no Monitor de Programa
+	Source Monitor Mouse Wheel	Roda do Mouse no Monitor de Origem (Source)
+	Effect Controls Mouse Wheel	Roda do Mouse nos Controles de Efeitos
+	Scroll	Scroll
 	Also Step Over the Preview	Também Avançar Sobre o Preview
 	Timeline Mouse Wheel Behavior	Comportamento do Scroll na Linha do Tempo
 	Step Frames	Avançar Quadros
@@ -3609,5 +3608,4 @@
 	Alternative	Alternativo
 	Timeline Mouse Wheel	Roda do Mouse na Linha do Tempo
 	Timeline Clicks and Drags	Cliques e Arrastes na Linha do Tempo
-	Monitors and Effect Controls Mouse Wheel	Roda do Mouse nos Monitores e Controles de Efeitos
 	More Settings…	Mais Configurações…

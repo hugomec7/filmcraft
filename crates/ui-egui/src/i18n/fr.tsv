@@ -3592,11 +3592,10 @@
 	Drag Playhead Line Across Tracks	Faire Glisser la Ligne de la Tête de Lecture sur les Pistes
 	Anywhere, Including Over Clips	Partout, Même sur les Clips
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	Règle Temporelle Divisée : la Moitié Supérieure Définit l'Entrée/Sortie
-	Program Monitor Timeline Wheel	Molette dans la Timeline du Moniteur de Programme
-	Source Monitor Timeline Wheel	Molette dans la Timeline du Moniteur Source
-	Effect Controls Timeline Wheel	Molette dans la Timeline des Options d'Effet
-	Also Step Over the Program Monitor Preview	Avancer Aussi sur l'Aperçu du Moniteur de Programme
-	Also Step Over the Source Monitor Preview	Avancer Aussi sur l'Aperçu du Moniteur Source
+	Program Monitor Mouse Wheel	Molette dans le Moniteur de Programme
+	Source Monitor Mouse Wheel	Molette dans le Moniteur Source
+	Effect Controls Mouse Wheel	Molette dans les Options d'Effet
+	Scroll	Molette
 	Also Step Over the Preview	Avancer Aussi sur l'Aperçu
 	Timeline Mouse Wheel Behavior	Comportement de la Molette dans la Timeline
 	Step Frames	Avancer d'une Image
@@ -3608,5 +3607,4 @@
 	Alternative	Alternatif
 	Timeline Mouse Wheel	Molette dans la Timeline
 	Timeline Clicks and Drags	Clics et Glissements dans la Timeline
-	Monitors and Effect Controls Mouse Wheel	Molette dans les Moniteurs et les Options d'Effet
 	More Settings…	Plus de Réglages…

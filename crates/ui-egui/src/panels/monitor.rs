@@ -714,12 +714,14 @@ fn handle_monitor_wheel(
     let action = if pinching {
         "zoom"
     } else if w.alt || w.command || w.shift {
-        // Alt, Shift and Ctrl + wheel do what the Timeline's rows say, over the time ruler only
-        // (over the picture they zoom it)
-        match app.session.prefs.navigation.modifier_wheel(w.command, w.alt, w.shift) {
+        // Alt, Shift and Ctrl + wheel do what Settings ▸ Navigation says for this monitor, over the
+        // time ruler only (over the picture they zoom it)
+        let panel = if which == Which::Program { "program" } else { "source" };
+        match app.session.prefs.navigation.panel_wheel(panel, w.command, w.alt, w.shift) {
             "zoom" if in_lower => "zoom",
             "horizontal" if in_lower => "scroll",
-            "step" if in_lower => "stepFrames",
+            "stepFrames" if in_lower => "stepFrames",
+            "stepKeyframes" if in_lower => "stepKeyframes",
             _ => "off",
         }
     } else if (w.delta.x.abs() > w.delta.y.abs() && in_lower) || wheel_mode == "horizontal" {
