@@ -292,7 +292,9 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     app.auto.add(&format!("{prefix}.picture"), pic.intersect(video_area), "picture");
     // (Comparison View always fits both frames)
     let wheel_mode = if which == Which::Program { app.session.prefs.timeline.program_wheel.clone() } else { app.session.prefs.timeline.source_wheel.clone() };
+    // the wheel steps over the picture only if asked to (and not with a modifier: that zooms it)
     let step_over_picture = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes")
+        && step_over_preview(app, which)
         && ui.input(|i| !(i.modifiers.alt || i.modifiers.command || i.modifiers.ctrl || i.modifiers.shift));
     if show_picture && !compare && !step_over_picture {
         monitor_view::zoom_pan_input(app, ui, which, video_area, pic, display_w, ppp);
@@ -389,7 +391,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     let wheel_pref_key = if which == Which::Program { "timeline.programWheel" } else { "timeline.sourceWheel" };
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
-    let wb_active = wheel_mode != "horizontal";
+    let wb_active = wheel_mode != "stepFrames";
     let wb_resp =
         crate::widgets::wheel_mode_button(ui, wbr, wb_active, &t, egui::Id::new((prefix, "wheel-mode"))).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
     app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline Mouse Wheel Behavior");
@@ -397,11 +399,20 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
         ui.set_min_width(210.0);
         ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
         ui.separator();
-        for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL {
+        for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
             if ui.selectable_label(wheel_mode == val, crate::i18n::t(label)).clicked() {
                 let _ = app.session.execute("prefs.set", json!({"key": wheel_pref_key, "value": val}));
                 ui.close();
             }
+        }
+        ui.separator();
+        let steps = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes");
+        let mut over = step_over_preview(app, which);
+        let key = if which == Which::Program { "timeline.programStepOverPreview" } else { "timeline.sourceStepOverPreview" };
+        let c = ui.add_enabled(steps, egui::Checkbox::new(&mut over, tl!("Also Step Over the Preview")));
+        app.auto.add(&format!("{prefix}.wheelMode.stepOverPreview"), c.rect, "Also Step Over the Preview");
+        if c.changed() {
+            let _ = app.session.execute("prefs.set", json!({"key": key, "value": over}));
         }
     });
     egui::Popup::menu(&wresp).show(|ui| {
@@ -653,11 +664,14 @@ fn ruler_shown(zoom: Option<[f64; 2]>, origin: Tick, end: Tick) -> (Tick, Tick) 
     (if s > 0.0 { at(s) } else { origin }, if e < 1.0 { at(e) } else { end })
 }
 
-/// While the monitor plays, a zoomed time ruler follows the playhead `time` the way the Timeline
-/// does (Settings ▸ Timeline ▸ Timeline Playback Auto-Scrolling): with page scrolling, a playhead
-/// running off the right edge or jumping before the left one brings it back near the left edge;
-/// with smooth scrolling it stays in the middle once it gets there. The range keeps its width.
-/// Mouse wheel over a monitor's timeline area (or over the monitor when stepping frames/keyframes).
+/// "Also Step Over the Program (Source) Monitor Preview": the wheel steps over the picture too.
+fn step_over_preview(app: &FilmcraftApp, which: Which) -> bool {
+    let t = &app.session.prefs.timeline;
+    if which == Which::Program { t.program_step_over_preview } else { t.source_step_over_preview }
+}
+
+/// Mouse wheel over a monitor's timeline area (or over the picture too, when stepping frames/keyframes
+/// and "Also Step Over the Preview" is on; otherwise the picture takes the wheel to zoom itself).
 #[allow(clippy::too_many_arguments)]
 fn handle_monitor_wheel(
     app: &mut FilmcraftApp,
@@ -678,7 +692,7 @@ fn handle_monitor_wheel(
         return;
     }
     let in_lower = p.y >= row1.min.y;
-    let step_anywhere = matches!(wheel_mode, "stepFrames" | "stepKeyframes");
+    let step_anywhere = matches!(wheel_mode, "stepFrames" | "stepKeyframes") && step_over_preview(app, which);
     if !in_lower && !step_anywhere {
         return;
     }
@@ -691,16 +705,21 @@ fn handle_monitor_wheel(
     let min_span = (rate.frame_duration().0.saturating_mul(MIN_ZOOM_FRAMES) as f64 / len).clamp(1e-6, 1.0);
     let action = if pinching {
         "zoom"
-    } else if w.alt && matches!(app.session.prefs.timeline.alt_scrolling.as_str(), "zoom" | "auto") && in_lower {
-        "zoom"
-    } else if (w.shift || w.alt) && wheel_mode == "zoom" && in_lower {
+    } else if w.alt || w.command || w.shift {
+        // Alt, Shift and Ctrl + wheel do what the Timeline's rows say, over the time ruler only
+        // (over the picture they zoom it)
+        match app.session.prefs.timeline.modifier_wheel(w.command, w.alt, w.shift) {
+            "zoom" if in_lower => "zoom",
+            "horizontal" if in_lower => "scroll",
+            "step" if in_lower => "stepFrames",
+            _ => "off",
+        }
+    } else if w.delta.x.abs() > w.delta.y.abs() && in_lower {
         "scroll"
-    } else if !(w.alt || w.command || w.shift) && w.delta.x.abs() > w.delta.y.abs() && in_lower {
+    } else if wheel_mode == "horizontal" {
         "scroll"
-    } else if !(w.alt || w.command || w.shift) {
-        if wheel_mode == "horizontal" { "scroll" } else { wheel_mode }
     } else {
-        "off"
+        wheel_mode
     };
     match action {
         "zoom" => {
@@ -792,6 +811,10 @@ fn step_monitor_keyframe(app: &FilmcraftApp, which: Which, time: Tick, forward: 
     if forward { cands.into_iter().find(|&t| t > time + Tick(1)) } else { cands.into_iter().rev().find(|&t| t + Tick(1) < time) }
 }
 
+/// While the monitor plays, a zoomed time ruler follows the playhead `time` the way the Timeline
+/// does (Settings ▸ Timeline ▸ Timeline Playback Auto-Scrolling): with page scrolling, a playhead
+/// running off the right edge or jumping before the left one brings it back near the left edge;
+/// with smooth scrolling it stays in the middle once it gets there. The range keeps its width.
 fn follow_playhead(app: &mut FilmcraftApp, which: Which, origin: Tick, end: Tick, time: Tick) {
     let playing = if which == Which::Program { app.playback.playing } else { app.source_playback.clock.playing };
     let mode = app.session.prefs.timeline.auto_scroll.as_str();

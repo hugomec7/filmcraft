@@ -2556,7 +2556,6 @@
 	Alt + Scroll	Alt + Scroll
 	Shift + Scroll	Shift + Scroll
 	Ctrl + Scroll	Ctrl + Scroll
-	Ctrl + Shift + Scroll	Ctrl + Shift + Scroll
 	Playhead and Time Ruler	Agulha (Playhead) e Régua de Tempo
 	Move Playhead on Timeline Click	Mover a Agulha ao Clicar na Linha do Tempo
 	Ruler Only	Apenas na Régua de Tempo
@@ -2569,14 +2568,13 @@
 	Program Monitor Timeline Wheel	Scroll na Linha do Tempo do Monitor de Programa
 	Source Monitor Timeline Wheel	Scroll na Linha do Tempo do Monitor de Origem (Source)
 	Effect Controls Timeline Wheel	Scroll na Linha do Tempo dos Controles de Efeitos
+	Also Step Over the Program Monitor Preview	Também Avançar Sobre o Preview do Monitor de Programa
+	Also Step Over the Source Monitor Preview	Também Avançar Sobre o Preview do Monitor de Origem (Source)
+	Also Step Over the Preview	Também Avançar Sobre o Preview
 	Timeline Mouse Wheel Behavior	Comportamento do Scroll na Linha do Tempo
-	Zoom and Resize Track	Zoom e Redimensionar Faixa
-	Resize All Tracks	Redimensionar Todas as Faixas
-	Resize Track	Redimensionar Faixa
 	Step Frames	Avançar Quadros
 	Step Keyframes	Pular Keyframes
 	Off (Ruler Head Only)	Desativado (Apenas pelo Topo na Régua)
-	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + Scroll
 	Pan Timeline by Dragging With Middle Mouse Button	Mover a Linha do Tempo Arrastando com o Botão do Meio do Mouse
 	Timeline Playback Auto-Scrolling	Rolagem Automática da Linha do Tempo Durante a Reprodução
 	Tint Color	Cor da tonalidade

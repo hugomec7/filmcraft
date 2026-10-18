@@ -962,73 +962,92 @@ fn builtin_label_presets_are_complete_and_distinct() {
 fn timeline_custom_wheel_playhead_and_panel_settings_round_trip() {
     let p = settings::TimelinePrefs::default();
     assert_eq!(p.mouse_scrolling, "vertical");
-    assert_eq!(p.alt_scrolling, "auto");
+    assert_eq!(p.alt_scrolling, "zoom");
     assert_eq!(p.shift_scrolling, "horizontal");
     assert_eq!(p.ctrl_scrolling, "horizontal");
-    assert_eq!(p.ctrl_shift_scrolling, "trackHeightAll");
-    assert_eq!(p.ctrl_shift_alt_scrolling, "off");
     assert_eq!(p.click_to_move_playhead, "rulerOnly");
     assert_eq!(p.drag_playhead_line, "emptySpace");
     assert!(!p.ruler_drag_in_out);
-    assert_eq!(p.program_wheel, "horizontal");
-    assert_eq!(p.source_wheel, "horizontal");
-    assert_eq!(p.effect_controls_wheel, "off");
+    assert_eq!((p.program_wheel.as_str(), p.source_wheel.as_str(), p.effect_controls_wheel.as_str()), ("stepFrames", "stepFrames", "stepFrames"));
+    assert!(!p.program_step_over_preview && !p.source_step_over_preview, "over the picture the wheel zooms it, as in Premiere");
     assert_eq!(p.wheel_action(false, false, false), "vertical");
     assert_eq!(p.wheel_action(false, true, false), "zoom");
     assert_eq!(p.wheel_action(false, false, true), "horizontal");
     assert_eq!(p.wheel_action(true, false, false), "horizontal");
-    assert_eq!(p.wheel_action(true, false, true), "trackHeightAll");
 
     let mut s = Session::default();
     set(&mut s, "timeline.mouseScrolling", json!("zoom"));
     set(&mut s, "timeline.altScrolling", json!("horizontal"));
     set(&mut s, "timeline.shiftScrolling", json!("vertical"));
     set(&mut s, "timeline.ctrlScrolling", json!("step"));
-    set(&mut s, "timeline.ctrlShiftScrolling", json!("off"));
     set(&mut s, "timeline.clickToMovePlayhead", json!("anywhere"));
     set(&mut s, "timeline.dragPlayheadLine", json!("emptySpace"));
     set(&mut s, "timeline.rulerDragInOut", json!(true));
     set(&mut s, "timeline.programWheel", json!("stepKeyframes"));
     set(&mut s, "timeline.sourceWheel", json!("zoom"));
-    set(&mut s, "timeline.effectControlsWheel", json!("stepFrames"));
+    set(&mut s, "timeline.effectControlsWheel", json!("horizontal"));
+    set(&mut s, "timeline.programStepOverPreview", json!(true));
     assert_eq!(s.prefs.timeline.wheel_action(false, false, false), "zoom");
     assert_eq!(s.prefs.timeline.wheel_action(false, true, false), "horizontal");
     assert_eq!(s.prefs.timeline.wheel_action(false, false, true), "vertical");
     assert_eq!(s.prefs.timeline.wheel_action(true, false, false), "step");
-    assert_eq!(s.prefs.timeline.wheel_action(true, false, true), "off");
+    // the panels follow the same rows
+    assert_eq!(s.prefs.timeline.modifier_wheel(false, true, false), "horizontal");
+    assert_eq!(s.prefs.timeline.modifier_wheel(false, false, true), "vertical");
+    assert_eq!(s.prefs.timeline.modifier_wheel(true, false, false), "step");
     assert_eq!(s.prefs.timeline.click_to_move_playhead, "anywhere");
     assert_eq!(s.prefs.timeline.drag_playhead_line, "emptySpace");
     assert!(s.prefs.timeline.ruler_drag_in_out);
     assert_eq!(s.prefs.timeline.program_wheel, "stepKeyframes");
     assert_eq!(s.prefs.timeline.source_wheel, "zoom");
-    assert_eq!(s.prefs.timeline.effect_controls_wheel, "stepFrames");
+    assert_eq!(s.prefs.timeline.effect_controls_wheel, "horizontal");
+    assert!(s.prefs.timeline.program_step_over_preview && !s.prefs.timeline.source_step_over_preview);
+    let back = Preferences::from_value(s.prefs.to_value());
+    assert!(back.timeline.program_step_over_preview, "survives a save and load");
 }
 
 #[test]
-fn timeline_wheel_can_resize_tracks_and_the_middle_button_pan_can_be_turned_off() {
+fn timeline_middle_button_pan_can_be_turned_off_and_resizing_tracks_is_not_a_setting() {
     let p = settings::TimelinePrefs::default();
     assert!(p.middle_button_pan, "the classic behaviour: a middle-button drag pans");
 
     let mut s = Session::default();
-    set(&mut s, "timeline.ctrlShiftScrolling", json!("trackHeightAll"));
-    set(&mut s, "timeline.altScrolling", json!("trackHeightOne"));
     set(&mut s, "timeline.middleButtonPan", json!(false));
-    assert_eq!(s.prefs.timeline.wheel_action(true, false, true), "trackHeightAll");
-    assert_eq!(s.prefs.timeline.wheel_action(false, true, false), "trackHeightOne");
     assert!(!s.prefs.timeline.middle_button_pan);
     // survives a save and load
     let back = Preferences::from_value(s.prefs.to_value());
-    assert_eq!(back.timeline.ctrl_shift_scrolling, "trackHeightAll");
     assert!(!back.timeline.middle_button_pan);
-    // by default Alt + wheel zooms over the clips and resizes the track under the pointer over the headers,
-    // Ctrl + Shift + wheel resizes all tracks of the half under the pointer, Ctrl + Shift + Alt does nothing
-    let classic = settings::TimelinePrefs::default();
-    assert_eq!(classic.wheel_action_at(false, true, false, false), "zoom");
-    assert_eq!(classic.wheel_action_at(false, true, false, true), "trackHeightOne");
-    assert_eq!(classic.wheel_action_at(true, false, true, false), "trackHeightAll");
-    assert_eq!(classic.wheel_action_at(true, true, true, false), "off");
-    // an unknown action is refused
-    assert!(s.execute("prefs.set", json!({"key": "timeline.ctrlShiftScrolling", "value": "resizeEverything"})).is_err());
+    // Alt + wheel over a track header and Ctrl + Shift + wheel over the tracks resize them whatever the
+    // rows say: the rows have no such choice, and Ctrl + Shift (or + Alt) does nothing anywhere else
+    for value in ["trackHeightOne", "trackHeightAll", "auto", "resizeEverything"] {
+        for key in ["timeline.mouseScrolling", "timeline.altScrolling", "timeline.shiftScrolling", "timeline.ctrlScrolling"] {
+            assert!(s.execute("prefs.set", json!({"key": key, "value": value})).is_err(), "{key} = {value}");
+        }
+    }
+    for key in ["timeline.ctrlShiftScrolling", "timeline.ctrlShiftAltScrolling"] {
+        assert!(settings::field(key).is_none(), "{key} is not a setting any more");
+    }
+    let defaults = settings::TimelinePrefs::default();
+    for (ctrl, alt, shift) in [(true, false, true), (true, true, true)] {
+        assert_eq!(defaults.wheel_action(ctrl, alt, shift), "off");
+        assert_eq!(defaults.modifier_wheel(ctrl, alt, shift), "off");
+    }
+    // values an older version saved fall back to the defaults instead of doing nothing
+    let old = settings::TimelinePrefs {
+        mouse_scrolling: "trackHeightAll".into(),
+        alt_scrolling: "auto".into(),
+        shift_scrolling: "trackHeightOne".into(),
+        ctrl_scrolling: "trackHeightAll".into(),
+        ..Default::default()
+    };
+    assert_eq!(old.wheel_action(false, false, false), "vertical");
+    assert_eq!(old.wheel_action(false, true, false), "zoom");
+    assert_eq!(old.wheel_action(false, false, true), "horizontal");
+    assert_eq!(old.wheel_action(true, false, false), "horizontal");
+    assert_eq!(old.modifier_wheel(false, true, false), "zoom");
+    // and a saved file that still has the removed keys loads
+    let loaded = Preferences::from_value(json!({"timeline": {"altScrolling": "auto", "ctrlShiftScrolling": "trackHeightAll", "ctrlShiftAltScrolling": "off"}}));
+    assert_eq!(loaded.timeline.wheel_action(false, true, false), "zoom");
 }
 
 #[test]
@@ -1055,7 +1074,7 @@ fn timeline_labels_name_no_other_product_and_use_title_case() {
         "timeline.mouseScrolling",
         "timeline.altScrolling",
         "timeline.shiftScrolling",
-        "timeline.ctrlShiftScrolling",
+        "timeline.ctrlScrolling",
         "timeline.clickToMovePlayhead",
         "timeline.dragPlayheadLine",
         "timeline.programWheel",
@@ -1067,35 +1086,35 @@ fn timeline_labels_name_no_other_product_and_use_title_case() {
             assert!(title_case(label), "{key}: {label}");
         }
     }
+    for key in ["timeline.programStepOverPreview", "timeline.sourceStepOverPreview"] {
+        let label = settings::field(key).unwrap_or_else(|| panic!("{key} is missing")).label;
+        assert!(title_case(label), "{label}");
+    }
 }
 
-/// Resizing tracks belongs to the modifiers: the bare wheel does not offer it (and an older saved
-/// value falls back to the classic wheel), and the monitors scroll their time ruler sideways by default.
+/// The wheel rows offer no track resizing, and the panels step frames by default (the quick menus
+/// of the panels leave "Disabled" out; the Settings keep it).
 #[test]
-fn the_bare_wheel_never_resizes_tracks_and_the_monitors_scroll_sideways_by_default() {
+fn the_wheel_rows_offer_no_track_resizing_and_the_panels_step_frames_by_default() {
     let options = |key: &str| -> Vec<&'static str> {
         let Some(Kind::Choice(opts)) = settings::field(key).map(|f| f.kind) else { panic!("{key} is not a choice") };
         opts.iter().map(|(v, _)| *v).collect()
     };
-    let bare = options("timeline.mouseScrolling");
-    assert!(bare.iter().all(|v| !v.starts_with("trackHeight")), "{bare:?}");
-    for key in ["timeline.altScrolling", "timeline.shiftScrolling", "timeline.ctrlScrolling", "timeline.ctrlShiftScrolling", "timeline.ctrlShiftAltScrolling"] {
-        let o = options(key);
-        assert!(o.contains(&"trackHeightAll") && o.contains(&"trackHeightOne"), "{key}: {o:?}");
+    for key in ["timeline.mouseScrolling", "timeline.altScrolling", "timeline.shiftScrolling", "timeline.ctrlScrolling"] {
+        assert_eq!(options(key), ["vertical", "horizontal", "zoom", "step", "off"], "{key}");
     }
-    for old in ["trackHeightAll", "trackHeightOne"] {
-        let p = settings::TimelinePrefs { mouse_scrolling: old.into(), ..Default::default() };
-        assert_eq!(p.wheel_action(false, false, false), "vertical", "{old}");
-        let mut s = Session::default();
-        assert!(s.execute("prefs.set", json!({"key": "timeline.mouseScrolling", "value": old})).is_err(), "{old}");
+    let defaults = settings::TimelinePrefs::default();
+    assert_eq!(defaults.modifier_wheel(true, false, false), "horizontal");
+    assert_eq!(defaults.modifier_wheel(false, true, false), "zoom");
+    assert_eq!(defaults.modifier_wheel(false, false, true), "horizontal");
+    assert_eq!(defaults.modifier_wheel(false, false, false), "off");
+    for key in ["timeline.programWheel", "timeline.sourceWheel", "timeline.effectControlsWheel"] {
+        assert_eq!(options(key), ["horizontal", "zoom", "stepFrames", "stepKeyframes", "off"], "{key}");
     }
-    let p = settings::TimelinePrefs::default();
-    assert_eq!((p.program_wheel.as_str(), p.source_wheel.as_str(), p.effect_controls_wheel.as_str()), ("horizontal", "horizontal", "off"));
-    assert!(options("timeline.programWheel").contains(&"horizontal"));
     for (_, f) in settings::fields().into_iter().filter(|(_, f)| f.key.starts_with("timeline.")) {
-        assert!(!f.label.contains("One Track"), "{}", f.label);
+        assert!(!f.label.contains("Resize"), "{}", f.label);
         if let Kind::Choice(opts) = f.kind {
-            assert!(opts.iter().all(|(_, l)| !l.contains("One Track")), "{}", f.key);
+            assert!(opts.iter().all(|(_, l)| !l.contains("Resize")), "{}", f.key);
         }
     }
 }

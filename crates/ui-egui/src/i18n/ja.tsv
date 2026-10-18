@@ -2543,7 +2543,6 @@
 	Alt + Scroll	Alt + スクロール
 	Shift + Scroll	Shift + スクロール
 	Ctrl + Scroll	Ctrl + スクロール
-	Ctrl + Shift + Scroll	Ctrl + Shift + スクロール
 	Playhead and Time Ruler	再生ヘッドとタイムルーラー
 	Move Playhead on Timeline Click	タイムラインのクリックで再生ヘッドを移動
 	Ruler Only	タイムルーラーのみ
@@ -2556,14 +2555,13 @@
 	Program Monitor Timeline Wheel	プログラムモニターのタイムラインホイール
 	Source Monitor Timeline Wheel	ソースモニターのタイムラインホイール
 	Effect Controls Timeline Wheel	エフェクトコントロールのタイムラインホイール
+	Also Step Over the Program Monitor Preview	プログラムモニターのプレビュー上でもフレーム送りする
+	Also Step Over the Source Monitor Preview	ソースモニターのプレビュー上でもフレーム送りする
+	Also Step Over the Preview	プレビュー上でもフレーム送りする
 	Timeline Mouse Wheel Behavior	タイムラインのマウスホイール動作
-	Zoom and Resize Track	ズームとトラックのリサイズ
-	Resize All Tracks	すべてのトラックをリサイズ
-	Resize Track	トラックをリサイズ
 	Step Frames	フレーム送り
 	Step Keyframes	キーフレーム送り
 	Off (Ruler Head Only)	オフ（ルーラーのヘッドのみ）
-	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + スクロール
 	Pan Timeline by Dragging With Middle Mouse Button	マウスの中ボタンのドラッグでタイムラインをパンする
 	Timeline Playback Auto-Scrolling	タイムライン再生時の自動スクロール
 	Tint Color	色合い

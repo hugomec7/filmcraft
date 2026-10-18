@@ -57,6 +57,17 @@ pub struct SettingsDraft {
 pub fn open(app: &mut FilmcraftApp, page: &str) -> Result<Value, String> {
     let cat = settings::category(page).ok_or_else(|| format!("unknown settings category `{page}`"))?;
     let mut values = app.session.prefs.to_value();
+    // a wheel action an older version saved (`auto`, `trackHeightOne`, ...) is not one of the choices any more
+    for (key, fallback) in [
+        ("timeline.mouseScrolling", "vertical"),
+        ("timeline.altScrolling", "zoom"),
+        ("timeline.shiftScrolling", "horizontal"),
+        ("timeline.ctrlScrolling", "horizontal"),
+    ] {
+        if !settings::MOUSE_SCROLL.iter().any(|(v, _)| *v == choice_text(get(&values, key))) {
+            put(&mut values, key, json!(fallback));
+        }
+    }
     if get(&values, "timeline.scrollToZoom").as_bool() == Some(true) && choice_text(get(&values, "timeline.mouseScrolling")) == "vertical" {
         put(&mut values, "timeline.mouseScrolling", json!("zoom"));
         if choice_text(get(&values, "timeline.altScrolling")) == "zoom" {

@@ -3590,7 +3590,6 @@
 	Alt + Scroll	Alt + 滚轮
 	Shift + Scroll	Shift + 滚轮
 	Ctrl + Scroll	Ctrl + 滚轮
-	Ctrl + Shift + Scroll	Ctrl + Shift + 滚轮
 	Playhead and Time Ruler	播放头与时间标尺
 	Move Playhead on Timeline Click	点击时间轴时移动播放头
 	Ruler Only	仅时间标尺
@@ -3603,15 +3602,14 @@
 	Program Monitor Timeline Wheel	节目监视器时间轴滚轮
 	Source Monitor Timeline Wheel	源监视器时间轴滚轮
 	Effect Controls Timeline Wheel	效果控件时间轴滚轮
+	Also Step Over the Program Monitor Preview	在节目监视器预览上也逐帧移动
+	Also Step Over the Source Monitor Preview	在源监视器预览上也逐帧移动
+	Also Step Over the Preview	在预览上也逐帧移动
 	Timeline Mouse Wheel Behavior	时间轴鼠标滚轮行为
-	Zoom and Resize Track	缩放并调整轨道大小
 	Zoom Anchor Point	缩放锚点
 	Cursor Position	光标位置
 	Playhead Position	播放头位置
-	Resize All Tracks	调整所有轨道大小
-	Resize Track	调整轨道大小
 	Step Frames	逐帧移动
 	Step Keyframes	逐关键帧移动
 	Off (Ruler Head Only)	关闭（仅标尺磁头）
-	Ctrl + Shift + Alt + Scroll	Ctrl + Shift + Alt + 滚动
 	Pan Timeline by Dragging With Middle Mouse Button	按住鼠标中键拖动以平移时间轴
