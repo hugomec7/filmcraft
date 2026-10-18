@@ -60,23 +60,13 @@ pub fn open(app: &mut FilmcraftApp, page: &str) -> Result<Value, String> {
     // a wheel action an older version saved (`auto`, `trackHeightOne`, ...) is not one of the choices any more
     for (key, fallback) in [
         ("timeline.mouseScrolling", "vertical"),
-        ("timeline.altScrolling", "zoom"),
-        ("timeline.shiftScrolling", "horizontal"),
-        ("timeline.ctrlScrolling", "horizontal"),
+        ("navigation.altScrolling", "zoom"),
+        ("navigation.shiftScrolling", "horizontal"),
+        ("navigation.ctrlScrolling", "horizontal"),
     ] {
         if !settings::MOUSE_SCROLL.iter().any(|(v, _)| *v == choice_text(get(&values, key))) {
             put(&mut values, key, json!(fallback));
         }
-    }
-    if get(&values, "timeline.scrollToZoom").as_bool() == Some(true) && choice_text(get(&values, "timeline.mouseScrolling")) == "vertical" {
-        put(&mut values, "timeline.mouseScrolling", json!("zoom"));
-        if choice_text(get(&values, "timeline.altScrolling")) == "zoom" {
-            put(&mut values, "timeline.altScrolling", json!("horizontal"));
-        }
-        if choice_text(get(&values, "timeline.ctrlScrolling")) == "horizontal" {
-            put(&mut values, "timeline.ctrlScrolling", json!("vertical"));
-        }
-        put(&mut values, "timeline.scrollToZoom", json!(false));
     }
     app.ui.settings = Some(SettingsDraft { page: cat.id.into(), values, ..Default::default() });
     app.dialog = Some(Dialog::Preferences);
@@ -145,14 +135,8 @@ pub fn appearance_context_menu(app: &mut FilmcraftApp, ui: &mut Ui) {
 }
 
 /// Keys the Appearance page draws as the mode selector and theme cards instead of plain fields.
-const APPEARANCE_KEYS: &[&str] = &[
-    "appearance.appearanceMode",
-    "appearance.lightTheme",
-    "appearance.darkTheme",
-    "appearance.colorTheme",
-    "appearance.favoriteThemes",
-    "timeline.scrollToZoom",
-];
+const APPEARANCE_KEYS: &[&str] =
+    &["appearance.appearanceMode", "appearance.lightTheme", "appearance.darkTheme", "appearance.colorTheme", "appearance.favoriteThemes"];
 
 /// A small FilmCraft editor painted with `t`'s colours: the header with the Import / Edit / Export
 /// tabs, the Source and Program monitors, the Project panel, the tools, the Timeline with video and
@@ -563,17 +547,6 @@ fn draw_field(app: &mut FilmcraftApp, ui: &mut Ui, d: &mut SettingsDraft, f: &Fi
                 Kind::Choice(opts) => {
                     field_label(ui, f.label);
                     if let Some(v) = combo(app, ui, f.key, &choice_text(&cur), &static_opts(opts), 300.0) {
-                        if f.key == "timeline.mouseScrolling" {
-                            put(&mut d.values, "timeline.scrollToZoom", json!(false));
-                            if v == "zoom" {
-                                if choice_text(get(&d.values, "timeline.altScrolling")) == "zoom" {
-                                    put(&mut d.values, "timeline.altScrolling", json!("horizontal"));
-                                }
-                                if choice_text(get(&d.values, "timeline.ctrlScrolling")) == "horizontal" {
-                                    put(&mut d.values, "timeline.ctrlScrolling", json!("vertical"));
-                                }
-                            }
-                        }
                         let x = if cur.is_number() { v.parse::<u64>().map(Value::from).unwrap_or(json!(v)) } else { json!(v) };
                         put(&mut d.values, f.key, x);
                     }
@@ -749,6 +722,30 @@ fn label_presets(app: &mut FilmcraftApp, ui: &mut Ui, d: &mut SettingsDraft) {
 }
 
 /// An icon button of the Label Color Presets row (`settings.labelPresets.<id>`).
+/// Settings ▸ Navigation ▸ Navigation Style: picking Default or Alternative sets every navigation
+/// setting (and Settings ▸ Timeline ▸ Timeline Mouse Scrolling) in the draft; OK applies it. The box
+/// shows Custom when the settings match neither.
+fn navigation_style(app: &mut FilmcraftApp, ui: &mut Ui, d: &mut SettingsDraft) {
+    let nav: settings::NavigationPrefs = serde_json::from_value(get(&d.values, "navigation").clone()).unwrap_or_default();
+    let wheel = choice_text(get(&d.values, "timeline.mouseScrolling"));
+    let current = nav.style(&wheel);
+    let mut opts = static_opts(settings::NAVIGATION_STYLES);
+    if current == "custom" {
+        opts.push(("custom".into(), "Custom".into()));
+    }
+    ui.horizontal(|ui| {
+        field_label(ui, tl!("Navigation Style"));
+        if let Some(v) = combo(app, ui, "navigation.style", current, &opts, 300.0)
+            && let Some((preset, bare)) = settings::navigation_style_preset(&v)
+            && let Ok(x) = serde_json::to_value(preset)
+        {
+            put(&mut d.values, "navigation", x);
+            put(&mut d.values, "timeline.mouseScrolling", json!(bare));
+        }
+    });
+    ui.add_space(4.0);
+}
+
 fn preset_button(app: &mut FilmcraftApp, ui: &mut Ui, id: &str, icon: Icon, tip: &str, enabled: bool) -> bool {
     let t = app.tokens;
     let r = ui.add_enabled_ui(enabled, |ui| crate::icons::button(ui, icon, 24.0, false, &t, tip)).inner;
@@ -824,6 +821,7 @@ fn custom(app: &mut FilmcraftApp, ui: &mut Ui, d: &mut SettingsDraft, name: &str
         }
         "appearanceModes" => appearance_modes(app, ui, d),
         "labelPresets" => label_presets(app, ui, d),
+        "navigationStyle" => navigation_style(app, ui, d),
         "autoSaveStatus" => {
             let status = app.session.execute("file.autoSaveStatus", json!({})).unwrap_or_default();
             if let Some(dir) = status["autoSaveDir"].as_str() {

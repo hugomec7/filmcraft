@@ -401,7 +401,7 @@ fn ec_wheel_claimed(app: &FilmcraftApp, ui: &egui::Ui, lane: Rect) -> bool {
     if !ui.rect_contains_pointer(full_lane) {
         return false;
     }
-    if app.session.prefs.timeline.effect_controls_wheel != "off" {
+    if app.session.prefs.navigation.effect_controls_wheel != "off" {
         return true;
     }
     let now = ctx.input(|i| i.time);
@@ -421,20 +421,18 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
     if !pinching && w.delta == egui::Vec2::ZERO {
         return;
     }
-    let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
+    let mode = app.session.prefs.navigation.effect_controls_wheel.clone();
     let action = if pinching {
         "zoom"
     } else if w.alt || w.command || w.shift {
         // Alt, Shift and Ctrl + wheel do what the Timeline's rows say
-        match app.session.prefs.timeline.modifier_wheel(w.command, w.alt, w.shift) {
+        match app.session.prefs.navigation.modifier_wheel(w.command, w.alt, w.shift) {
             "zoom" => "zoom",
             "horizontal" => "scroll",
             "step" => "stepFrames",
             _ => "off",
         }
-    } else if w.delta.x.abs() > w.delta.y.abs() {
-        "scroll"
-    } else if mode == "horizontal" {
+    } else if w.delta.x.abs() > w.delta.y.abs() || mode == "horizontal" {
         "scroll"
     } else {
         mode.as_str()
@@ -455,7 +453,7 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
         "zoom" => {
             let factor = if pinching { w.pinch as f64 } else { crate::panels::timeline_zoom::wheel_zoom_factor(w.delta.y as f64) };
             let cursor_u = ((p.x - lane.min.x) / lane.width().max(1.0)).clamp(0.0, 1.0) as f64;
-            let playhead_f = (app.session.prefs.timeline.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
+            let playhead_f = (app.session.prefs.navigation.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
                 .then(|| ((ph - it.start).0 as f64 / len).clamp(0.0, 1.0));
             app.ui.effect_controls_zoom =
                 crate::panels::timeline_zoom::zoom_fraction_range(app.ui.effect_controls_zoom, cursor_u, playhead_f, factor, min_span);
@@ -525,7 +523,7 @@ fn ec_footer_controls(
     t: &Tokens,
 ) {
     // Quick wheel mode button next to the footer timecode
-    let mode = app.session.prefs.timeline.effect_controls_wheel.clone();
+    let mode = app.session.prefs.navigation.effect_controls_wheel.clone();
     if split - rect.min.x > 140.0 {
         let br = Rect::from_min_size(pos2(rect.min.x + 108.0, rect.max.y - 25.0), vec2(22.0, 22.0));
         let resp = crate::widgets::wheel_mode_button(ui, br, mode != "stepFrames", t, egui::Id::new("ec-wheel-mode"))
@@ -537,9 +535,16 @@ fn ec_footer_controls(
             ui.separator();
             for &(val, text) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
                 if ui.selectable_label(mode == val, crate::i18n::t(text)).clicked() {
-                    let _ = app.session.execute("prefs.set", json!({"key": "timeline.effectControlsWheel", "value": val}));
+                    let _ = app.session.execute("prefs.set", json!({"key": "navigation.effectControlsWheel", "value": val}));
                     ui.close();
                 }
+            }
+            ui.separator();
+            let more = ui.selectable_label(false, tl!("More Settings…"));
+            app.auto.add("effectControls.wheelMode.moreSettings", more.rect, "More Settings…");
+            if more.clicked() {
+                let _ = crate::panels::settings::open(app, "navigation");
+                ui.close();
             }
         });
     }

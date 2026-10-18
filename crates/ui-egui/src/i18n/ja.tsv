@@ -2534,7 +2534,6 @@
 	Time and Pitch	時間とピッチ
 	Timecode Conversion	タイムコード変換
 	Timeline Mouse Scrolling	タイムラインのマウススクロール
-	Scroll to zoom on timeline	マウスホイールでタイムラインをズーム
 	Zoom Anchor Point	ズームのアンカーポイント
 	Cursor Position	カーソル位置
 	Playhead Position	再生ヘッドの位置
@@ -2543,7 +2542,6 @@
 	Alt + Scroll	Alt + スクロール
 	Shift + Scroll	Shift + スクロール
 	Ctrl + Scroll	Ctrl + スクロール
-	Playhead and Time Ruler	再生ヘッドとタイムルーラー
 	Move Playhead on Timeline Click	タイムラインのクリックで再生ヘッドを移動
 	Ruler Only	タイムルーラーのみ
 	Empty Space Only	空きスペースのみ
@@ -2551,7 +2549,6 @@
 	Drag Playhead Line Across Tracks	トラック上で再生ヘッドの線をドラッグ
 	Anywhere, Including Over Clips	クリップ上を含むどこでも
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	タイムルーラーを分割：上半分をドラッグしてイン/アウト範囲を設定
-	Other Timelines Mouse Wheel	他のタイムラインでのマウスホイール
 	Program Monitor Timeline Wheel	プログラムモニターのタイムラインホイール
 	Source Monitor Timeline Wheel	ソースモニターのタイムラインホイール
 	Effect Controls Timeline Wheel	エフェクトコントロールのタイムラインホイール
@@ -3638,3 +3635,10 @@
 	Shows the version, community links and credits in a FilmCraft window.	バージョン、コミュニティへのリンク、クレジットを FilmCraft のウィンドウに表示します。
 	Couldn't open your web browser	ウェブブラウザーを開けませんでした
 	Open this address in your browser yourself:	このアドレスをご自身でブラウザーで開いてください：
+	Navigation…	ナビゲーション…
+	Navigation Style	ナビゲーションスタイル
+	Alternative	代替
+	Timeline Mouse Wheel	タイムラインのマウスホイール
+	Timeline Clicks and Drags	タイムラインのクリックとドラッグ
+	Monitors and Effect Controls Mouse Wheel	モニターとエフェクトコントロールのマウスホイール
+	More Settings…	その他の設定…

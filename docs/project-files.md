@@ -237,7 +237,8 @@ opens the dialog on a page.
 | Memory | frame cache budget of the monitors and thumbnails |
 | Playback | preroll / postroll (Play Around, trim loop), Step forward/back many |
 | Plugins | stub (no plugins) |
-| Timeline | video / audio transition and still image default durations (frames or seconds), playback auto-scrolling (none / page / smooth), snap playhead, return to beginning at playback end, play after rendering previews |
+| Timeline | video / audio transition and still image default durations (frames or seconds), playback auto-scrolling (none / page / smooth), mouse scrolling (what the bare wheel does: vertical, horizontal, zoom, step the playhead, nothing), snap playhead, return to beginning at playback end, play after rendering previews |
+| Navigation | Navigation Style (Default / Alternative; Custom when changed), what Alt / Shift / Ctrl + wheel do on the Timeline (and on the time rulers of the Program and Source Monitors and Effect Controls), the zoom anchor (cursor or playhead), where a click moves the playhead, where the playhead line can be dragged, the split time ruler (upper half sets In/Out), middle-button panning, and what the wheel does over the monitors' and Effect Controls' time rulers (step frames by default) and over the monitors' picture. Fixed, as in Premiere: Alt + wheel over a track header resizes that track, Ctrl + Shift + wheel over the video (or audio) tracks resizes all of them |
 | Trim | Large Trim Offset, Selection tool picks roll (on the cut) / ripple (on the edge) without a modifier, playhead determines trim loop |
 
 The remaining fields are kept for parity and shown, but have no effect yet (`wired: false`).

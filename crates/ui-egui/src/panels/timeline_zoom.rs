@@ -31,7 +31,7 @@ pub fn wheel_zoom_factor(delta: f64) -> f64 {
     if !delta.is_finite() {
         return 1.0;
     }
-    (delta * WHEEL_ZOOM_PER_POINT).exp().min(MAX_STEP).max(1.0 / MAX_STEP)
+    (delta * WHEEL_ZOOM_PER_POINT).exp().clamp(1.0 / MAX_STEP, MAX_STEP)
 }
 
 /// How the Timeline is scaled and scrolled.
@@ -118,13 +118,7 @@ fn limits(min_zoom: f64, max_zoom: f64) -> (f64, f64) {
 /// across the whole clip/sequence when the playhead anchor is active). If the playhead is within the
 /// visible `[s, e]` window, its screen position holds the pivot; otherwise `cursor_u` holds it.
 /// Returns `None` when the zoomed range covers the full `0.0..=1.0` extent.
-pub fn zoom_fraction_range(
-    current: Option<[f64; 2]>,
-    cursor_u: f64,
-    playhead_f: Option<f64>,
-    factor: f64,
-    min_span: f64,
-) -> Option<[f64; 2]> {
+pub fn zoom_fraction_range(current: Option<[f64; 2]>, cursor_u: f64, playhead_f: Option<f64>, factor: f64, min_span: f64) -> Option<[f64; 2]> {
     let (s, e) = match current {
         Some([a, b]) if a.is_finite() && b.is_finite() && a >= 0.0 && b <= 1.0 && a < b => (a, b),
         _ => (0.0, 1.0),

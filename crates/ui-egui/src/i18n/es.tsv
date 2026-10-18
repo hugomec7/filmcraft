@@ -2548,7 +2548,6 @@
 	Time and Pitch	Tiempo y tono
 	Timecode Conversion	Conversión de código de tiempo
 	Timeline Mouse Scrolling	Desplazamiento con el Ratón en la Línea de Tiempo
-	Scroll to zoom on timeline	Usar la rueda del ratón para hacer zoom en la línea de tiempo
 	Zoom Anchor Point	Punto de Anclaje del Zoom
 	Cursor Position	Posición del Cursor
 	Playhead Position	Posición del Cabezal
@@ -2557,7 +2556,6 @@
 	Alt + Scroll	Alt + Rueda
 	Shift + Scroll	Mayús + Rueda
 	Ctrl + Scroll	Ctrl + Rueda
-	Playhead and Time Ruler	Cabezal de Reproducción y Regla de Tiempo
 	Move Playhead on Timeline Click	Mover el Cabezal al Hacer Clic en la Línea de Tiempo
 	Ruler Only	Solo en la Regla de Tiempo
 	Empty Space Only	Solo en Espacios Vacíos
@@ -2565,7 +2563,6 @@
 	Drag Playhead Line Across Tracks	Arrastrar la Línea del Cabezal sobre las Pistas
 	Anywhere, Including Over Clips	En Cualquier Lugar, Incluso sobre Clips
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	Dividir Regla de Tiempo: Arrastrar en la Mitad Superior Define Entrada/Salida
-	Other Timelines Mouse Wheel	Rueda del Ratón en Otras Líneas de Tiempo
 	Program Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Programa
 	Source Monitor Timeline Wheel	Rueda en la Línea de Tiempo del Monitor de Origen
 	Effect Controls Timeline Wheel	Rueda en la Línea de Tiempo de Controles de Efectos
@@ -3639,3 +3636,10 @@
 	Shows the version, community links and credits in a FilmCraft window.	Muestra la versión, los enlaces de la comunidad y los créditos en una ventana de FilmCraft.
 	Couldn't open your web browser	No se pudo abrir el navegador web
 	Open this address in your browser yourself:	Abre esta dirección tú mismo en el navegador:
+	Navigation…	Navegación…
+	Navigation Style	Estilo de Navegación
+	Alternative	Alternativo
+	Timeline Mouse Wheel	Rueda del Ratón en la Línea de Tiempo
+	Timeline Clicks and Drags	Clics y Arrastres en la Línea de Tiempo
+	Monitors and Effect Controls Mouse Wheel	Rueda del Ratón en Monitores y Controles de Efectos
+	More Settings…	Más Ajustes…

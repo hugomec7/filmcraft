@@ -291,7 +291,8 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     let pic_resp = ui.interact(pic, egui::Id::new((prefix, "pic")), if show_picture { Sense::click_and_drag() } else { Sense::hover() });
     app.auto.add(&format!("{prefix}.picture"), pic.intersect(video_area), "picture");
     // (Comparison View always fits both frames)
-    let wheel_mode = if which == Which::Program { app.session.prefs.timeline.program_wheel.clone() } else { app.session.prefs.timeline.source_wheel.clone() };
+    let wheel_mode =
+        if which == Which::Program { app.session.prefs.navigation.program_wheel.clone() } else { app.session.prefs.navigation.source_wheel.clone() };
     // the wheel steps over the picture only if asked to (and not with a modifier: that zooms it)
     let step_over_picture = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes")
         && step_over_preview(app, which)
@@ -388,7 +389,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     let wresp = ui.interact(wr, egui::Id::new((prefix, "wrench")), Sense::click());
     icons::paint(ui.painter(), wr.shrink(4.0), Icon::Wrench, if wresp.hovered() { t.tab_text_active } else { t.icon });
     app.auto.add(&format!("{prefix}.settings"), wr, "Settings");
-    let wheel_pref_key = if which == Which::Program { "timeline.programWheel" } else { "timeline.sourceWheel" };
+    let wheel_pref_key = if which == Which::Program { "navigation.programWheel" } else { "navigation.sourceWheel" };
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
     let wb_active = wheel_mode != "stepFrames";
@@ -408,11 +409,18 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
         ui.separator();
         let steps = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes");
         let mut over = step_over_preview(app, which);
-        let key = if which == Which::Program { "timeline.programStepOverPreview" } else { "timeline.sourceStepOverPreview" };
+        let key = if which == Which::Program { "navigation.programStepOverPreview" } else { "navigation.sourceStepOverPreview" };
         let c = ui.add_enabled(steps, egui::Checkbox::new(&mut over, tl!("Also Step Over the Preview")));
         app.auto.add(&format!("{prefix}.wheelMode.stepOverPreview"), c.rect, "Also Step Over the Preview");
         if c.changed() {
             let _ = app.session.execute("prefs.set", json!({"key": key, "value": over}));
+        }
+        ui.separator();
+        let more = ui.selectable_label(false, tl!("More Settings…"));
+        app.auto.add(&format!("{prefix}.wheelMode.moreSettings"), more.rect, "More Settings…");
+        if more.clicked() {
+            let _ = crate::panels::settings::open(app, "navigation");
+            ui.close();
         }
     });
     egui::Popup::menu(&wresp).show(|ui| {
@@ -666,7 +674,7 @@ fn ruler_shown(zoom: Option<[f64; 2]>, origin: Tick, end: Tick) -> (Tick, Tick) 
 
 /// "Also Step Over the Program (Source) Monitor Preview": the wheel steps over the picture too.
 fn step_over_preview(app: &FilmcraftApp, which: Which) -> bool {
-    let t = &app.session.prefs.timeline;
+    let t = &app.session.prefs.navigation;
     if which == Which::Program { t.program_step_over_preview } else { t.source_step_over_preview }
 }
 
@@ -708,15 +716,13 @@ fn handle_monitor_wheel(
     } else if w.alt || w.command || w.shift {
         // Alt, Shift and Ctrl + wheel do what the Timeline's rows say, over the time ruler only
         // (over the picture they zoom it)
-        match app.session.prefs.timeline.modifier_wheel(w.command, w.alt, w.shift) {
+        match app.session.prefs.navigation.modifier_wheel(w.command, w.alt, w.shift) {
             "zoom" if in_lower => "zoom",
             "horizontal" if in_lower => "scroll",
             "step" if in_lower => "stepFrames",
             _ => "off",
         }
-    } else if w.delta.x.abs() > w.delta.y.abs() && in_lower {
-        "scroll"
-    } else if wheel_mode == "horizontal" {
+    } else if (w.delta.x.abs() > w.delta.y.abs() && in_lower) || wheel_mode == "horizontal" {
         "scroll"
     } else {
         wheel_mode
@@ -725,7 +731,7 @@ fn handle_monitor_wheel(
         "zoom" => {
             let factor = if pinching { w.pinch as f64 } else { crate::panels::timeline_zoom::wheel_zoom_factor(w.delta.y as f64) };
             let cursor_u = ((p.x - bar.min.x) / bar.width().max(1.0)).clamp(0.0, 1.0) as f64;
-            let playhead_f = (app.session.prefs.timeline.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
+            let playhead_f = (app.session.prefs.navigation.zoom_anchor == filmcraft_engine::settings::ZoomAnchor::Playhead)
                 .then(|| ((time - origin).0 as f64 / len).clamp(0.0, 1.0));
             let cur = monitor_view::view(app, which).time_zoom;
             monitor_view::view_mut(app, which).time_zoom = crate::panels::timeline_zoom::zoom_fraction_range(cur, cursor_u, playhead_f, factor, min_span);

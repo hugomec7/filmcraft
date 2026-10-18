@@ -187,14 +187,14 @@ fn the_mouse_scrolling_setting_swaps_wheel_and_cmd_wheel() {
     assert!((d.view().1 - 60.0).abs() < 1e-6, "Option + wheel zooms either way");
 }
 
-/// Settings ▸ Timeline ▸ "Scroll to zoom on timeline": the bare wheel over the tracks zooms about the
-/// pointer (the time under it stays under it) and no longer moves the tracks. Off by default.
+/// Settings ▸ Timeline ▸ Timeline Mouse Scrolling "Zoom": the bare wheel over the tracks zooms about
+/// the pointer (the time under it stays under it) and no longer moves the tracks. Off by default.
 #[test]
-fn scroll_to_zoom_makes_the_bare_wheel_zoom_about_the_pointer() {
+fn the_zoom_wheel_setting_makes_the_bare_wheel_zoom_about_the_pointer() {
     let mut d = Driver::tall();
-    assert!(!d.app().session.prefs.timeline.scroll_to_zoom, "off by default: the classic wheel");
-    assert_eq!(d.app().session.prefs.timeline.zoom_anchor, ZoomAnchor::Cursor);
-    d.app().session.prefs.timeline.scroll_to_zoom = true;
+    assert_eq!(d.app().session.prefs.timeline.mouse_scrolling, "vertical", "the classic wheel by default");
+    assert_eq!(d.app().session.prefs.navigation.zoom_anchor, ZoomAnchor::Cursor);
+    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
     let tracks = d.rect("timeline.tracks");
     let under_pointer = 4.0 + (tracks[2] as f64 * 0.5) / 50.0;
     d.wheel(0.2, 0.0, 40.0, none());
@@ -214,12 +214,14 @@ fn scroll_to_zoom_makes_the_bare_wheel_zoom_about_the_pointer() {
     assert!(d.view().1 <= 24_000.0 + 1e-6);
 }
 
-/// With the wheel on the zoom, Option or Shift + wheel moves the Timeline sideways, Cmd + wheel moves
-/// the tracks, and a sideways swipe still scrolls sideways.
+/// With the wheel on the zoom, and Settings ▸ Navigation set so that Option or Shift + wheel moves the
+/// Timeline sideways and Cmd + wheel moves the tracks; a sideways swipe still scrolls sideways.
 #[test]
-fn with_scroll_to_zoom_option_and_shift_wheel_scroll_sideways_and_cmd_wheel_moves_the_tracks() {
+fn with_the_wheel_on_zoom_option_and_shift_wheel_scroll_sideways_and_cmd_wheel_moves_the_tracks() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.scroll_to_zoom = true;
+    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
+    d.app().session.prefs.navigation.alt_scrolling = "horizontal".into();
+    d.app().session.prefs.navigation.ctrl_scrolling = "vertical".into();
     d.wheel(0.2, 0.0, -100.0, json!({"alt": true}));
     assert_eq!(d.view(), (6.0, 50.0, 0.0, 0.0), "Option + wheel: 100 points at 50 points a second is 2 s, and no zoom");
     d.wheel(0.2, 0.0, 50.0, json!({"shift": true}));
@@ -230,13 +232,13 @@ fn with_scroll_to_zoom_option_and_shift_wheel_scroll_sideways_and_cmd_wheel_move
     assert_eq!(d.view(), (6.0, 50.0, 40.0, 0.0), "a sideways swipe scrolls sideways");
 }
 
-/// Settings ▸ Timeline ▸ "Zoom anchor point" "Playhead position": the playhead stays where it is on
+/// Settings ▸ Navigation ▸ "Zoom Anchor Point" "Playhead Position": the playhead stays where it is on
 /// screen while the zoom happens around it; with "Cursor position" it moves. A playhead out of view
 /// cannot hold the pivot: the pointer does.
 #[test]
 fn the_playhead_anchor_keeps_the_playhead_in_place_while_zooming() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.scroll_to_zoom = true;
+    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
     d.app().session.set_playhead(Tick::from_seconds_f64(10.0));
     d.frames(4);
     assert_eq!(d.view(), (4.0, 50.0, 0.0, 0.0), "a playhead in view does not scroll the Timeline");
@@ -256,7 +258,7 @@ fn the_playhead_anchor_keeps_the_playhead_in_place_while_zooming() {
     // about the playhead it stays put
     d.ok("ui.set", json!({"timeline": {"pps": 50.0, "scroll": 4.0}}));
     d.frames(4);
-    d.app().session.prefs.timeline.zoom_anchor = ZoomAnchor::Playhead;
+    d.app().session.prefs.navigation.zoom_anchor = ZoomAnchor::Playhead;
     d.wheel(0.2, 0.0, 40.0, none());
     assert!((d.view().1 - 50.0 * wheel_zoom_factor(40.0)).abs() < 1e-6);
     let held = playhead_x(&mut d);
@@ -280,7 +282,7 @@ fn the_playhead_anchor_keeps_the_playhead_in_place_while_zooming() {
 #[test]
 fn the_playhead_anchor_applies_to_option_wheel_zoom_too() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.zoom_anchor = ZoomAnchor::Playhead;
+    d.app().session.prefs.navigation.zoom_anchor = ZoomAnchor::Playhead;
     d.app().session.set_playhead(Tick::from_seconds_f64(10.0));
     d.frames(4);
     let ph = d.app().session.playhead().seconds();
@@ -480,7 +482,7 @@ fn the_wheel_can_resize_all_video_or_all_audio_tracks_by_the_pointer() {
 #[test]
 fn alt_wheel_over_a_track_header_resizes_only_that_track() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.alt_scrolling = "horizontal".into();
+    d.app().session.prefs.navigation.alt_scrolling = "horizontal".into();
     let (v0, a0) = (d.app().ui.timeline.video_track_h, d.app().ui.timeline.audio_track_h);
     let before = d.view();
     d.wheel_on("timeline.headers", 0.2, 0.0, 40.0, json!({"alt": true}));

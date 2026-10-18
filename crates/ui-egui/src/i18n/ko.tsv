@@ -3596,3 +3596,36 @@
 	Shows the version, community links and credits in a FilmCraft window.	FilmCraft 창에 버전, 커뮤니티 링크, 제작진을 보여 줍니다.
 	Couldn't open your web browser	웹 브라우저를 열 수 없습니다
 	Open this address in your browser yourself:	이 주소를 브라우저에서 직접 여세요:
+	Zoom Anchor Point	줌 기준점
+	Cursor Position	커서 위치
+	Playhead Position	재생 헤드 위치
+	Step Playhead (Frames)	재생 헤드 이동 (프레임)
+	Disabled	사용 안 함
+	Alt + Scroll	Alt + 스크롤
+	Shift + Scroll	Shift + 스크롤
+	Ctrl + Scroll	Ctrl + 스크롤
+	Move Playhead on Timeline Click	타임라인 클릭 시 재생 헤드 이동
+	Ruler Only	눈금자만
+	Empty Space Only	빈 공간만
+	Anywhere on Timeline	타임라인 어디서나
+	Drag Playhead Line Across Tracks	트랙 위에서 재생 헤드 선 드래그
+	Anywhere, Including Over Clips	어디서나, 클립 위 포함
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	분할 시간 눈금자: 위쪽 절반을 드래그해 시작/끝 설정
+	Program Monitor Timeline Wheel	프로그램 모니터 타임라인 휠
+	Source Monitor Timeline Wheel	소스 모니터 타임라인 휠
+	Effect Controls Timeline Wheel	효과 컨트롤 타임라인 휠
+	Also Step Over the Program Monitor Preview	프로그램 모니터 미리보기 위에서도 이동
+	Also Step Over the Source Monitor Preview	소스 모니터 미리보기 위에서도 이동
+	Also Step Over the Preview	미리보기 위에서도 이동
+	Timeline Mouse Wheel Behavior	타임라인 마우스 휠 동작
+	Step Frames	프레임 단위 이동
+	Step Keyframes	키프레임 단위 이동
+	Off (Ruler Head Only)	끔 (눈금자 헤드만)
+	Pan Timeline by Dragging With Middle Mouse Button	마우스 가운데 버튼 드래그로 타임라인 이동
+	Navigation…	탐색…
+	Navigation Style	탐색 스타일
+	Alternative	대체
+	Timeline Mouse Wheel	타임라인 마우스 휠
+	Timeline Clicks and Drags	타임라인 클릭과 드래그
+	Monitors and Effect Controls Mouse Wheel	모니터와 효과 컨트롤 마우스 휠
+	More Settings…	추가 설정…

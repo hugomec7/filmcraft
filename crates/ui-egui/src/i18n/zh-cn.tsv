@@ -3590,7 +3590,6 @@
 	Alt + Scroll	Alt + 滚轮
 	Shift + Scroll	Shift + 滚轮
 	Ctrl + Scroll	Ctrl + 滚轮
-	Playhead and Time Ruler	播放头与时间标尺
 	Move Playhead on Timeline Click	点击时间轴时移动播放头
 	Ruler Only	仅时间标尺
 	Empty Space Only	仅空白区域
@@ -3598,7 +3597,6 @@
 	Drag Playhead Line Across Tracks	在轨道上拖动播放头线
 	Anywhere, Including Over Clips	任意位置，包括片段上方
 	Split Time Ruler: Drag Upper Half to Set In/Out Range	分割时间标尺：拖动上半部分设置入点/出点范围
-	Other Timelines Mouse Wheel	其他时间轴鼠标滚轮
 	Program Monitor Timeline Wheel	节目监视器时间轴滚轮
 	Source Monitor Timeline Wheel	源监视器时间轴滚轮
 	Effect Controls Timeline Wheel	效果控件时间轴滚轮
@@ -3613,3 +3611,10 @@
 	Step Keyframes	逐关键帧移动
 	Off (Ruler Head Only)	关闭（仅标尺磁头）
 	Pan Timeline by Dragging With Middle Mouse Button	按住鼠标中键拖动以平移时间轴
+	Navigation…	导航…
+	Navigation Style	导航风格
+	Alternative	备选
+	Timeline Mouse Wheel	时间轴鼠标滚轮
+	Timeline Clicks and Drags	时间轴点击与拖动
+	Monitors and Effect Controls Mouse Wheel	监视器与效果控件鼠标滚轮
+	More Settings…	更多设置…

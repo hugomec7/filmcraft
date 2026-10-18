@@ -3601,3 +3601,36 @@
 	Shows the version, community links and credits in a FilmCraft window.	Mostra la versione, i link della community e i riconoscimenti in una finestra di FilmCraft.
 	Couldn't open your web browser	Impossibile aprire il browser web
 	Open this address in your browser yourself:	Apri tu questo indirizzo nel browser:
+	Zoom Anchor Point	Punto di Ancoraggio dello Zoom
+	Cursor Position	Posizione del Cursore
+	Playhead Position	Posizione dell'Indicatore
+	Step Playhead (Frames)	Sposta l'Indicatore (Fotogrammi)
+	Disabled	Disattivato
+	Alt + Scroll	Alt + Rotella
+	Shift + Scroll	Maiusc + Rotella
+	Ctrl + Scroll	Ctrl + Rotella
+	Move Playhead on Timeline Click	Sposta l'Indicatore al Clic sulla Timeline
+	Ruler Only	Solo Righello
+	Empty Space Only	Solo Spazi Vuoti
+	Anywhere on Timeline	Ovunque sulla Timeline
+	Drag Playhead Line Across Tracks	Trascina la Linea dell'Indicatore sulle Tracce
+	Anywhere, Including Over Clips	Ovunque, Anche sopra le Clip
+	Split Time Ruler: Drag Upper Half to Set In/Out Range	Righello Temporale Diviso: la Metà Superiore Imposta Attacco/Stacco
+	Program Monitor Timeline Wheel	Rotella nella Timeline del Monitor Programma
+	Source Monitor Timeline Wheel	Rotella nella Timeline del Monitor Sorgente
+	Effect Controls Timeline Wheel	Rotella nella Timeline dei Controlli Effetti
+	Also Step Over the Program Monitor Preview	Avanza Anche sull'Anteprima del Monitor Programma
+	Also Step Over the Source Monitor Preview	Avanza Anche sull'Anteprima del Monitor Sorgente
+	Also Step Over the Preview	Avanza Anche sull'Anteprima
+	Timeline Mouse Wheel Behavior	Comportamento della Rotella nella Timeline
+	Step Frames	Avanza di un Fotogramma
+	Step Keyframes	Avanza di un Fotogramma Chiave
+	Off (Ruler Head Only)	Disattivato (Solo Testa del Righello)
+	Pan Timeline by Dragging With Middle Mouse Button	Scorri la Timeline Trascinando con il Tasto Centrale
+	Navigation…	Navigazione…
+	Navigation Style	Stile di Navigazione
+	Alternative	Alternativo
+	Timeline Mouse Wheel	Rotella nella Timeline
+	Timeline Clicks and Drags	Clic e Trascinamenti nella Timeline
+	Monitors and Effect Controls Mouse Wheel	Rotella nei Monitor e nei Controlli Effetti
+	More Settings…	Altre Impostazioni…
