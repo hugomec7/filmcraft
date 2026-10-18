@@ -177,8 +177,8 @@ fn cmd_wheel_moves_the_timeline_sideways_and_option_wheel_zooms() {
 #[test]
 fn the_mouse_scrolling_setting_swaps_wheel_and_cmd_wheel() {
     let mut d = Driver::tall();
-    assert_eq!(d.app().session.prefs.timeline.mouse_scrolling, "vertical", "Premiere's default on macOS");
-    d.app().session.prefs.timeline.mouse_scrolling = "horizontal".into();
+    assert_eq!(d.app().session.prefs.navigation.mouse_scrolling, "vertical", "Premiere's default on macOS");
+    d.app().session.prefs.navigation.mouse_scrolling = "horizontal".into();
     d.wheel(0.2, 0.0, -100.0, none());
     assert_eq!(d.view(), (6.0, 50.0, 0.0, 0.0));
     d.wheel(0.2, 0.0, 40.0, json!({"command": true}));
@@ -192,9 +192,9 @@ fn the_mouse_scrolling_setting_swaps_wheel_and_cmd_wheel() {
 #[test]
 fn the_zoom_wheel_setting_makes_the_bare_wheel_zoom_about_the_pointer() {
     let mut d = Driver::tall();
-    assert_eq!(d.app().session.prefs.timeline.mouse_scrolling, "vertical", "the classic wheel by default");
+    assert_eq!(d.app().session.prefs.navigation.mouse_scrolling, "vertical", "the classic wheel by default");
     assert_eq!(d.app().session.prefs.navigation.zoom_anchor, ZoomAnchor::Cursor);
-    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
+    d.app().session.prefs.navigation.mouse_scrolling = "zoom".into();
     let tracks = d.rect("timeline.tracks");
     let under_pointer = 4.0 + (tracks[2] as f64 * 0.5) / 50.0;
     d.wheel(0.2, 0.0, 40.0, none());
@@ -219,7 +219,7 @@ fn the_zoom_wheel_setting_makes_the_bare_wheel_zoom_about_the_pointer() {
 #[test]
 fn with_the_wheel_on_zoom_option_and_shift_wheel_scroll_sideways_and_cmd_wheel_moves_the_tracks() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
+    d.app().session.prefs.navigation.mouse_scrolling = "zoom".into();
     d.app().session.prefs.navigation.alt_scrolling = "horizontal".into();
     d.app().session.prefs.navigation.ctrl_scrolling = "vertical".into();
     d.wheel(0.2, 0.0, -100.0, json!({"alt": true}));
@@ -238,7 +238,7 @@ fn with_the_wheel_on_zoom_option_and_shift_wheel_scroll_sideways_and_cmd_wheel_m
 #[test]
 fn the_playhead_anchor_keeps_the_playhead_in_place_while_zooming() {
     let mut d = Driver::tall();
-    d.app().session.prefs.timeline.mouse_scrolling = "zoom".into();
+    d.app().session.prefs.navigation.mouse_scrolling = "zoom".into();
     d.app().session.set_playhead(Tick::from_seconds_f64(10.0));
     d.frames(4);
     assert_eq!(d.view(), (4.0, 50.0, 0.0, 0.0), "a playhead in view does not scroll the Timeline");

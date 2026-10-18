@@ -426,7 +426,7 @@ fn handle_ec_wheel(app: &mut FilmcraftApp, ui: &mut egui::Ui, lane: Rect, it: &T
         "zoom"
     } else if w.alt || w.command || w.shift {
         // Alt, Shift and Ctrl + wheel do what Settings ▸ Navigation says for Effect Controls
-        match app.session.prefs.navigation.panel_wheel("effectControls", w.command, w.alt, w.shift) {
+        match app.session.prefs.navigation.panel_wheel("effectControls", false, w.command, w.alt, w.shift) {
             "zoom" => "zoom",
             "horizontal" => "scroll",
             "stepFrames" => "stepFrames",

@@ -293,12 +293,12 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     // (Comparison View always fits both frames)
     let wheel_mode =
         if which == Which::Program { app.session.prefs.navigation.program_wheel.clone() } else { app.session.prefs.navigation.source_wheel.clone() };
-    // the wheel steps over the picture only if asked to (and not with a modifier: that zooms it)
-    let step_over_picture = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes")
-        && step_over_preview(app, which)
-        && ui.input(|i| !(i.modifiers.alt || i.modifiers.command || i.modifiers.ctrl || i.modifiers.shift));
-    if show_picture && !compare && !step_over_picture {
-        monitor_view::zoom_pan_input(app, ui, which, video_area, pic, display_w, ppp);
+    // over the picture the wheel zooms it unless Settings ▸ Navigation gives it another action for
+    // the keys held (that one runs in `handle_monitor_wheel`); a pinch always zooms it
+    let mods = ui.input(|i| i.modifiers);
+    let picture_wheel = app.session.prefs.navigation.panel_wheel(monitor_panel(which), true, mods.command || mods.ctrl, mods.alt, mods.shift) == "zoom";
+    if show_picture && !compare {
+        monitor_view::zoom_pan_input(app, ui, which, video_area, pic, display_w, ppp, picture_wheel);
     }
     if which == Which::Program && show_picture {
         // an armed eyedropper owns clicks on the picture: the overlays would sit on top and take
@@ -362,8 +362,9 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     app.auto.add(&format!("{prefix}.zoom"), zr, "Select Zoom Level");
     monitor_view::zoom_menu(app, &zresp, which);
     let res = mv.res;
+    // (stacked, the resolution box, the wrench and the mouse-wheel button end at the right edge)
     let resolution_x = if stacked_controls && which == Which::Source && !separate_source_drag {
-        row1.max.x - 90.0
+        row1.max.x - 116.0
     } else if stacked_controls {
         zr.max.x + 6.0
     } else {
@@ -390,9 +391,10 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     icons::paint(ui.painter(), wr.shrink(4.0), Icon::Wrench, if wresp.hovered() { t.tab_text_active } else { t.icon });
     app.auto.add(&format!("{prefix}.settings"), wr, "Settings");
     let wheel_pref_key = if which == Which::Program { "navigation.programWheel" } else { "navigation.sourceWheel" };
+    let preview_pref_key = if which == Which::Program { "navigation.programPreviewWheel" } else { "navigation.sourcePreviewWheel" };
     let wbtn_x = if stacked_controls { wr.max.x + 4.0 } else { (rr.min.x - 26.0).max(zr.max.x + 4.0) };
     let wbr = Rect::from_min_size(pos2(wbtn_x, settings_y + 1.0), vec2(22.0, 22.0));
-    let wb_active = wheel_mode != "stepFrames";
+    let wb_active = wheel_mode != "stepFrames" || app.session.prefs.navigation.panel_wheel(monitor_panel(which), true, false, false, false) != "zoom";
     let wb_resp =
         crate::widgets::wheel_mode_button(ui, wbr, wb_active, &t, egui::Id::new((prefix, "wheel-mode"))).on_hover_text(tl!("Timeline Mouse Wheel Behavior"));
     app.auto.add(&format!("{prefix}.wheelMode"), wbr, "Timeline Mouse Wheel Behavior");
@@ -400,20 +402,25 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
         ui.set_min_width(210.0);
         ui.label(egui::RichText::new(tl!("Timeline Mouse Wheel Behavior")).color(t.text_dim).size(11.5));
         ui.separator();
-        for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
-            if ui.selectable_label(wheel_mode == val, crate::i18n::t(label)).clicked() {
-                let _ = app.session.execute("prefs.set", json!({"key": wheel_pref_key, "value": val}));
-                ui.close();
+        // the bare wheel over the picture and over the time ruler
+        let panel = monitor_panel(which);
+        for (over_preview, heading, key) in [(true, tl!("Over the Preview"), preview_pref_key), (false, tl!("Over the Time Ruler"), wheel_pref_key)] {
+            // each area under its own rule and heading
+            if !over_preview {
+                ui.add_space(2.0);
+                ui.separator();
             }
-        }
-        ui.separator();
-        let steps = matches!(wheel_mode.as_str(), "stepFrames" | "stepKeyframes");
-        let mut over = step_over_preview(app, which);
-        let key = if which == Which::Program { "navigation.programStepOverPreview" } else { "navigation.sourceStepOverPreview" };
-        let c = ui.add_enabled(steps, egui::Checkbox::new(&mut over, tl!("Also Step Over the Preview")));
-        app.auto.add(&format!("{prefix}.wheelMode.stepOverPreview"), c.rect, "Also Step Over the Preview");
-        if c.changed() {
-            let _ = app.session.execute("prefs.set", json!({"key": key, "value": over}));
+            ui.add_space(2.0);
+            ui.label(egui::RichText::new(heading).color(t.text).strong().size(11.5));
+            let now = app.session.prefs.navigation.panel_wheel(panel, over_preview, false, false, false).to_string();
+            for &(val, label) in filmcraft_engine::settings::PANEL_WHEEL.iter().filter(|(v, _)| *v != "off") {
+                let c = ui.selectable_label(now == val, crate::i18n::t(label));
+                app.auto.add(&format!("{prefix}.wheelMode.{}.{val}", if over_preview { "preview" } else { "ruler" }), c.rect, label);
+                if c.clicked() {
+                    let _ = app.session.execute("prefs.set", json!({"key": key, "value": val}));
+                    ui.close();
+                }
+            }
         }
         ui.separator();
         let more = ui.selectable_label(false, tl!("More Settings…"));
@@ -477,7 +484,7 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, which: Which)
     // ---- mini timeline / scrub bar
     let bar = Rect::from_min_size(pos2(rect.min.x + 14.0, settings_y + 28.0 + source_drag_h), vec2(rect.width() - 28.0, 22.0));
     let zoom_bar = Rect::from_min_size(pos2(bar.min.x, bar.max.y + 2.0), vec2(bar.width(), 13.0));
-    handle_monitor_wheel(app, ui, rect, row1, bar, which, origin, time, duration, rate, &wheel_mode);
+    handle_monitor_wheel(app, ui, rect, row1, bar, which, origin, time, duration, rate);
     follow_playhead(app, which, origin, duration, time);
     time_zoom_bar(app, ui, zoom_bar, which, origin, duration, rate);
     mini_timeline(app, ui, bar, which, origin, time, duration, rate, mark_in, mark_out);
@@ -672,14 +679,13 @@ fn ruler_shown(zoom: Option<[f64; 2]>, origin: Tick, end: Tick) -> (Tick, Tick) 
     (if s > 0.0 { at(s) } else { origin }, if e < 1.0 { at(e) } else { end })
 }
 
-/// "Also Step Over the Program (Source) Monitor Preview": the wheel steps over the picture too.
-fn step_over_preview(app: &FilmcraftApp, which: Which) -> bool {
-    let t = &app.session.prefs.navigation;
-    if which == Which::Program { t.program_step_over_preview } else { t.source_step_over_preview }
+/// The monitor's panel name in Settings ▸ Navigation ([`filmcraft_engine::settings::NavigationPrefs::panel_wheel`]).
+fn monitor_panel(which: Which) -> &'static str {
+    if which == Which::Program { "program" } else { "source" }
 }
 
-/// Mouse wheel over a monitor's timeline area (or over the picture too, when stepping frames/keyframes
-/// and "Also Step Over the Preview" is on; otherwise the picture takes the wheel to zoom itself).
+/// Mouse wheel over a monitor: over its time ruler, and over the picture for the actions that are
+/// not a zoom of the picture (Settings ▸ Navigation; the picture zooms itself in `zoom_pan_input`).
 #[allow(clippy::too_many_arguments)]
 fn handle_monitor_wheel(
     app: &mut FilmcraftApp,
@@ -692,7 +698,6 @@ fn handle_monitor_wheel(
     time: Tick,
     end: Tick,
     rate: filmcraft_time::FrameRate,
-    wheel_mode: &str,
 ) {
     let ctx = ui.ctx();
     let Some(p) = ctx.pointer_hover_pos() else { return };
@@ -700,34 +705,32 @@ fn handle_monitor_wheel(
         return;
     }
     let in_lower = p.y >= row1.min.y;
-    let step_anywhere = matches!(wheel_mode, "stepFrames" | "stepKeyframes") && step_over_preview(app, which);
-    if !in_lower && !step_anywhere {
-        return;
-    }
     let w = crate::panels::timeline::wheel_input(ctx);
     let pinching = (w.pinch - 1.0).abs() > 1e-4;
     if !pinching && w.delta == egui::Vec2::ZERO {
         return;
     }
+    // a pinch over the picture zooms the picture
+    if pinching && !in_lower {
+        return;
+    }
     let len = end.0.saturating_sub(origin.0).max(1) as f64;
     let min_span = (rate.frame_duration().0.saturating_mul(MIN_ZOOM_FRAMES) as f64 / len).clamp(1e-6, 1.0);
+    let chosen = app.session.prefs.navigation.panel_wheel(monitor_panel(which), !in_lower, w.command, w.alt, w.shift);
     let action = if pinching {
         "zoom"
-    } else if w.alt || w.command || w.shift {
-        // Alt, Shift and Ctrl + wheel do what Settings ▸ Navigation says for this monitor, over the
-        // time ruler only (over the picture they zoom it)
-        let panel = if which == Which::Program { "program" } else { "source" };
-        match app.session.prefs.navigation.panel_wheel(panel, w.command, w.alt, w.shift) {
-            "zoom" if in_lower => "zoom",
-            "horizontal" if in_lower => "scroll",
-            "stepFrames" if in_lower => "stepFrames",
-            "stepKeyframes" if in_lower => "stepKeyframes",
-            _ => "off",
-        }
-    } else if (w.delta.x.abs() > w.delta.y.abs() && in_lower) || wheel_mode == "horizontal" {
+    } else if in_lower && !(w.alt || w.command || w.shift) && w.delta.x.abs() > w.delta.y.abs() {
+        // a sideways gesture over the time ruler scrolls it
         "scroll"
     } else {
-        wheel_mode
+        match chosen {
+            // over the picture a zoom is the picture's own (`zoom_pan_input`)
+            "zoom" if in_lower => "zoom",
+            "horizontal" => "scroll",
+            "stepFrames" => "stepFrames",
+            "stepKeyframes" => "stepKeyframes",
+            _ => "off",
+        }
     };
     match action {
         "zoom" => {

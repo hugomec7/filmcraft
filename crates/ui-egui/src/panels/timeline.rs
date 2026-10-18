@@ -1488,7 +1488,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
         (Icon::Captions, "captions", false, false, tl!("Caption track options")),
         (Icon::Marker, "marker", false, false, tl!("Add Marker (M)")),
         (Icon::Wrench, "settings", false, false, tl!("Timeline Display Settings")),
-        (Icon::Hand, "wheel", wheel_now != "vertical", true, tl!("Timeline Mouse Wheel Behavior")),
+        (Icon::Mouse, "wheel", wheel_now != "vertical", true, tl!("Timeline Mouse Wheel Behavior")),
     ];
     // seven buttons fit the header column: they close up a little when it is narrow
     let pitch = ((app.ui.timeline.header_w - 16.0) / 7.0).clamp(24.0, 30.0);
@@ -1522,7 +1522,7 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
                     app.auto.add(&format!("timeline.wheelMode.{val}"), c.rect, label);
                     if c.clicked() {
                         // only the bare wheel changes; the modifiers stay as they are in Settings ▸ Navigation
-                        let _ = app.session.execute("prefs.set", json!({"key": "timeline.mouseScrolling", "value": val}));
+                        let _ = app.session.execute("prefs.set", json!({"key": "navigation.mouseScrolling", "value": val}));
                         ui.close();
                     }
                 }
@@ -2400,7 +2400,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             };
             match action.as_str() {
                 "zoom" if w.delta.y != 0.0 => {
-                    let classic_alt = w.alt && !w.command && !w.shift && app.session.prefs.timeline.mouse_scrolling != "zoom";
+                    let classic_alt = w.alt && !w.command && !w.shift && app.session.prefs.navigation.mouse_scrolling != "zoom";
                     let factor = if classic_alt { (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0) } else { wheel_zoom_factor(w.delta.y as f64) };
                     zoom_timeline(app, layout, p.x, factor, anchor);
                     ctx.request_repaint();

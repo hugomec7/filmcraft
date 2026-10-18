@@ -365,7 +365,10 @@ pub fn picture_rect(area: Rect, fw: f32, fh: f32, v: &MonitorView, ppp: f32) -> 
 /// Zoom and pan the picture `pic` shown in `area`: the wheel (or a pinch) zooms about the pointer,
 /// from Fit too, between the zoom menu's 10% and 1600%; a middle-button drag, or a drag with the
 /// Hand tool, pans the picture (see [`pan_limit`]; a fitted one keeps its size). `fw` is the picture's width in frame pixels.
-pub fn zoom_pan_input(app: &mut FilmcraftApp, ui: &mut egui::Ui, w: Which, area: Rect, pic: Rect, fw: f32, ppp: f32) {
+/// `wheel_zooms` is whether the wheel zooms the picture now (Settings ▸ Navigation, for the keys held);
+/// a pinch always does.
+#[allow(clippy::too_many_arguments)]
+pub fn zoom_pan_input(app: &mut FilmcraftApp, ui: &mut egui::Ui, w: Which, area: Rect, pic: Rect, fw: f32, ppp: f32, wheel_zooms: bool) {
     let ctx = ui.ctx().clone();
     if ui.rect_contains_pointer(area)
         && let Some(p) = ctx.pointer_hover_pos()
@@ -373,7 +376,13 @@ pub fn zoom_pan_input(app: &mut FilmcraftApp, ui: &mut egui::Ui, w: Which, area:
         // about 10% per wheel notch (40 points), exponential in the wheel travel so a notch out
         // undoes a notch in exactly
         let wheel = crate::panels::timeline::wheel_input(&ctx);
-        let f = if (wheel.pinch - 1.0).abs() > 1e-4 { wheel.pinch } else { (wheel.delta.y * 1.1_f32.ln() / 40.0).exp().clamp(0.5, 2.0) };
+        let f = if (wheel.pinch - 1.0).abs() > 1e-4 {
+            wheel.pinch
+        } else if wheel_zooms {
+            (wheel.delta.y * 1.1_f32.ln() / 40.0).exp().clamp(0.5, 2.0)
+        } else {
+            1.0
+        };
         if (f - 1.0).abs() > 1e-4 && pic.width() > 0.0 && fw > 0.0 {
             let cur = pic.width() * ppp / fw;
             let z = (cur * f).clamp(ZOOMS[0].1, ZOOMS[ZOOMS.len() - 1].1);
