@@ -494,7 +494,10 @@ pub fn show(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect) {
     }
     // in/out shading across tracks (including live preview while dragging In/Out on the split ruler)
     let (mark_in, mark_out) = match app.tl.drag {
-        Some(Drag::RulerInOut { anchor, current }) => (Some(anchor.min(current)), Some(anchor.max(current))),
+        Some(Drag::RulerInOut { anchor, current }) => {
+            let (i, o) = ruler_inout_marks(anchor, current, seq.settings.frame_rate);
+            (Some(i), Some(o))
+        }
         _ => (seq.mark_in, seq.mark_out),
     };
     if mark_in.is_some() || mark_out.is_some() {
@@ -1417,7 +1420,7 @@ fn draw_headers(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, rows:
             }
             if eresp.dragged() {
                 let d = eresp.drag_delta().y * if r.kind == TrackKind::Video { -1.0 } else { 1.0 };
-                let h = if r.kind == TrackKind::Video { &mut app.ui.timeline.video_track_h } else { &mut app.ui.timeline.audio_track_h };
+                let h = track_height_mut(&mut app.ui.timeline, r.kind == TrackKind::Video, r.track.0);
                 *h = (*h + d).clamp(TRACK_H_MIN, TRACK_H_MAX);
             }
         }
@@ -1427,7 +1430,7 @@ fn draw_headers(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, rows:
             Sense::click(),
         );
         if resp.double_clicked() {
-            let h = if r.kind == TrackKind::Video { &mut app.ui.timeline.video_track_h } else { &mut app.ui.timeline.audio_track_h };
+            let h = track_height_mut(&mut app.ui.timeline, r.kind == TrackKind::Video, r.track.0);
             *h = if *h < 50.0 { 64.0 } else { 30.0 };
         }
     }
@@ -1586,7 +1589,10 @@ fn draw_top(app: &mut FilmcraftApp, ui: &mut egui::Ui, rect: Rect, seq: &Sequenc
     let (minor, label_step) = ruler_steps(layout.pps / rate.as_f64(), rate.timecode_base());
     // In/Out band (and split-ruler divider / handles when enabled)
     let (mark_in, mark_out) = match app.tl.drag {
-        Some(Drag::RulerInOut { anchor, current }) => (Some(anchor.min(current)), Some(anchor.max(current))),
+        Some(Drag::RulerInOut { anchor, current }) => {
+            let (i, o) = ruler_inout_marks(anchor, current, seq.settings.frame_rate);
+            (Some(i), Some(o))
+        }
         _ => (seq.mark_in, seq.mark_out),
     };
     let split_ruler = app.session.prefs.navigation.ruler_drag_in_out;
@@ -2326,6 +2332,25 @@ fn on_playhead_line(app: &FilmcraftApp, seq: &Sequence, layout: &Layout, p: Pos2
 
 /// Anchor tick when starting a ruler In/Out drag at `p`: if the pointer is within 6 px of an
 /// existing In or Out mark, the opposite mark stays anchored so the user can resize the range.
+/// The height a header drag or double-click changes: the track's own height when Alt + wheel gave
+/// it one, else the height its kind shares.
+fn track_height_mut(tv: &mut TimelineView, video: bool, id: u64) -> &mut f32 {
+    if tv.track_h_override.contains_key(&id) {
+        tv.track_h_override.entry(id).or_insert(TRACK_H_MIN)
+    } else if video {
+        &mut tv.video_track_h
+    } else {
+        &mut tv.audio_track_h
+    }
+}
+
+/// The sequence In and Out (inclusive: the start of the last frame) of a split-ruler drag between
+/// `anchor` and `current`, which are frame edges: the Out frame ends at the later one.
+fn ruler_inout_marks(anchor: Tick, current: Tick, rate: FrameRate) -> (Tick, Tick) {
+    let (start, end) = (anchor.min(current), anchor.max(current));
+    (start, Tick(end.0.saturating_sub(rate.frame_duration().0)).max(start))
+}
+
 fn ruler_inout_anchor(app: &mut FilmcraftApp, seq: &Sequence, layout: &Layout, p: Pos2, shift: bool) -> (Tick, Tick) {
     let rate = seq.settings.frame_rate;
     let mut cur = rate.snap_nearest(layout.tick_at(p.x).max(Tick::ZERO));
@@ -2335,8 +2360,9 @@ fn ruler_inout_anchor(app: &mut FilmcraftApp, seq: &Sequence, layout: &Layout, p
     if let (Some(mi), Some(mo)) = (seq.mark_in, seq.mark_out) {
         let xi = layout.x_of(mi);
         let xo = layout.x_of(mo + rate.frame_duration());
+        // the anchor is the far edge of the range: the end of the Out frame, or the In
         if (p.x - xi).abs() <= 6.0 {
-            return (mo, cur);
+            return (mo + rate.frame_duration(), cur);
         }
         if (p.x - xo).abs() <= 6.0 {
             return (mi, cur);
@@ -2402,10 +2428,13 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
             } else {
                 app.session.prefs.wheel_action(w.command, w.alt, w.shift).to_string()
             };
+            // the wheel's movement on its main axis: a platform may report a modified wheel (Shift +
+            // wheel on Windows) sideways, and Zoom or Vertical set for it must still act
+            let dd = if w.delta.y.abs() >= w.delta.x.abs() { w.delta.y } else { w.delta.x };
             match action.as_str() {
-                "zoom" if w.delta.y != 0.0 => {
+                "zoom" if dd != 0.0 => {
                     let classic_alt = w.alt && !w.command && !w.shift && app.session.prefs.navigation.mouse_scrolling != "zoom";
-                    let factor = if classic_alt { (1.0_f64 + w.delta.y as f64 * 0.01).clamp(0.5, 2.0) } else { wheel_zoom_factor(w.delta.y as f64) };
+                    let factor = if classic_alt { (1.0_f64 + dd as f64 * 0.01).clamp(0.5, 2.0) } else { wheel_zoom_factor(dd as f64) };
                     zoom_timeline(app, layout, p.x, factor, anchor);
                     ctx.request_repaint();
                 }
@@ -2418,9 +2447,9 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 "vertical" => {
                     if p.y < layout.split_y {
-                        app.ui.timeline.v_scroll += w.delta.y;
+                        app.ui.timeline.v_scroll += dd;
                     } else {
-                        app.ui.timeline.a_scroll -= w.delta.y;
+                        app.ui.timeline.a_scroll -= dd;
                     }
                 }
                 "step" => {
@@ -2441,9 +2470,9 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 // wheel up makes the tracks taller, wheel down shorter: every track of the half under the
                 // pointer (video above the divider, audio below it), or only the one under the pointer
-                "trackHeightAll" | "trackHeightOne" if w.delta.y != 0.0 => {
+                "trackHeightAll" | "trackHeightOne" if dd != 0.0 => {
                     let video = p.y < layout.split_y;
-                    let step = (w.delta.y * 0.25).clamp(-TRACK_H_STEP_MAX, TRACK_H_STEP_MAX);
+                    let step = (dd * 0.25).clamp(-TRACK_H_STEP_MAX, TRACK_H_STEP_MAX);
                     let tv = &mut app.ui.timeline;
                     if action == "trackHeightAll" {
                         let kind = if video { TrackKind::Video } else { TrackKind::Audio };
@@ -2947,7 +2976,7 @@ fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &
                 }
                 Drag::RulerInOut { anchor, current } => {
                     if let Some(seq_id) = app.session.state.active_sequence {
-                        let (start, end) = (anchor.min(current), anchor.max(current));
+                        let (start, end) = ruler_inout_marks(anchor, current, rate);
                         Some(app.session.execute("project.setMarks", json!({"item": seq_id.0, "in": start.0, "out": end.0})))
                     } else {
                         None
@@ -3675,5 +3704,37 @@ mod ruler_tests {
         }
         let (minor, label) = ruler_steps(1.0, i64::MAX);
         assert!(minor >= 1 && label >= 1 && label % minor == 0, "an unrepresentable rate: tick {minor}, label {label}");
+    }
+}
+
+#[cfg(test)]
+mod ruler_inout_tests {
+    use super::*;
+
+    /// A split-ruler drag runs between frame edges; the sequence Out is the start of the last frame
+    /// in the range, as Mark Out sets it, and a press that does not move marks one frame.
+    #[test]
+    fn a_ruler_drag_marks_the_frames_between_its_edges() {
+        let rate = FrameRate::FPS_25;
+        let f = rate.frame_duration();
+        let at = |n: i64| Tick(f.0 * n);
+        assert_eq!(ruler_inout_marks(at(10), at(20), rate), (at(10), at(19)));
+        assert_eq!(ruler_inout_marks(at(20), at(10), rate), (at(10), at(19)), "either way round");
+        assert_eq!(ruler_inout_marks(at(10), at(10), rate), (at(10), at(10)), "one frame, never an Out before the In");
+        assert_eq!(ruler_inout_marks(Tick::ZERO, Tick::ZERO, rate), (Tick::ZERO, Tick::ZERO));
+    }
+
+    /// Alt + wheel gives a track its own height; dragging its header edge then changes that height,
+    /// not the one the other tracks share.
+    #[test]
+    fn a_header_drag_changes_a_track_s_own_height() {
+        let mut tv = TimelineView::default();
+        let shared = tv.video_track_h;
+        *track_height_mut(&mut tv, true, 7) += 10.0;
+        assert_eq!(tv.video_track_h, shared + 10.0, "no height of its own: the shared one");
+        tv.track_h_override.insert(7, 100.0);
+        *track_height_mut(&mut tv, true, 7) += 10.0;
+        assert_eq!(tv.track_h_override.get(&7), Some(&110.0));
+        assert_eq!(tv.video_track_h, shared + 10.0, "the others stay");
     }
 }
