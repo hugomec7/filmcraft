@@ -954,9 +954,11 @@ impl NavigationPrefs {
 pub const NAVIGATION_STYLES: &[(&str, &str)] = &[("default", "Default"), ("alternative", "Alternative")];
 
 /// The settings of a navigation style, or `None` for an unknown style. `default` is FilmCraft's
-/// out-of-the-box behaviour; `alternative` is the other common way of working: the wheel zooms about the pointer everywhere, Ctrl + wheel scrolls sideways and Shift +
-/// wheel up and down, a click anywhere on the Timeline moves the playhead (and still selects the clip
-/// under it), the playhead line drags from anywhere, and the upper half of the time ruler sets In/Out.
+/// out-of-the-box behaviour; `alternative` is the other common way of working: on the Timeline the
+/// wheel zooms about the pointer, Ctrl + wheel scrolls sideways and Shift + wheel up and down, a
+/// click anywhere moves the playhead (and still selects the clip under it), the playhead line drags
+/// from anywhere and the upper half of the time ruler sets In/Out; the monitors zoom the picture and
+/// step frames over their time ruler, and Effect Controls zooms its keyframe lane.
 pub fn navigation_style_preset(id: &str) -> Option<NavigationPrefs> {
     match id {
         "default" => Some(NavigationPrefs::default()),
@@ -969,11 +971,27 @@ pub fn navigation_style_preset(id: &str) -> Option<NavigationPrefs> {
             click_to_move_playhead: "anywhere".into(),
             drag_playhead_line: "anywhere".into(),
             ruler_drag_in_out: true,
-            program_wheel: "zoom".into(),
-            source_wheel: "zoom".into(),
+            program_wheel: "stepFrames".into(),
+            program_alt_wheel: "zoom".into(),
+            program_shift_wheel: "stepFrames".into(),
+            program_ctrl_wheel: "horizontal".into(),
+            program_preview_wheel: "zoom".into(),
+            program_preview_alt_wheel: "zoom".into(),
+            program_preview_shift_wheel: "stepFrames".into(),
+            program_preview_ctrl_wheel: "horizontal".into(),
+            source_wheel: "stepFrames".into(),
+            source_alt_wheel: "zoom".into(),
+            source_shift_wheel: "stepFrames".into(),
+            source_ctrl_wheel: "horizontal".into(),
+            source_preview_wheel: "zoom".into(),
+            source_preview_alt_wheel: "zoom".into(),
+            source_preview_shift_wheel: "stepFrames".into(),
+            source_preview_ctrl_wheel: "horizontal".into(),
             effect_controls_wheel: "zoom".into(),
+            effect_controls_alt_wheel: "horizontal".into(),
+            effect_controls_shift_wheel: "stepFrames".into(),
+            effect_controls_ctrl_wheel: "stepKeyframes".into(),
             middle_button_pan: true,
-            ..NavigationPrefs::default()
         }),
         _ => None,
     }

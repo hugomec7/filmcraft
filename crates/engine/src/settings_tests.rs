@@ -1073,7 +1073,13 @@ fn navigation_styles_set_every_navigation_setting() {
     assert_eq!((alt.click_to_move_playhead.as_str(), alt.drag_playhead_line.as_str()), ("anywhere", "anywhere"));
     assert_eq!((alt.shift_scrolling.as_str(), alt.ctrl_scrolling.as_str()), ("vertical", "horizontal"));
     assert!(alt.ruler_drag_in_out && alt.middle_button_pan);
-    assert_eq!((alt.program_wheel.as_str(), alt.source_wheel.as_str(), alt.effect_controls_wheel.as_str()), ("zoom", "zoom", "zoom"));
+    assert_eq!((alt.program_wheel.as_str(), alt.source_wheel.as_str(), alt.effect_controls_wheel.as_str()), ("stepFrames", "stepFrames", "zoom"));
+    assert_eq!(
+        (alt.program_preview_wheel.as_str(), alt.program_preview_shift_wheel.as_str(), alt.program_preview_ctrl_wheel.as_str()),
+        ("zoom", "stepFrames", "horizontal")
+    );
+    assert_eq!((alt.effect_controls_alt_wheel.as_str(), alt.effect_controls_ctrl_wheel.as_str()), ("horizontal", "stepKeyframes"));
+    assert_eq!(alt.zoom_anchor, settings::ZoomAnchor::Cursor);
     let mut custom = alt.clone();
     custom.ruler_drag_in_out = false;
     assert_eq!(custom.style(), "custom");
