@@ -540,3 +540,18 @@ fn ctrl_shift_wheel_resizes_all_tracks_of_the_half_under_the_pointer() {
     d.wheel_on("timeline.headers", 0.8, 0.0, 40.0, both);
     assert!(d.app().ui.timeline.audio_track_h > a1, "over the audio track headers the audio tracks grow");
 }
+
+/// A platform may report a modified wheel sideways (Shift + wheel on Windows): set to Vertical (or
+/// Zoom), it still acts, on the wheel's main axis.
+#[test]
+fn a_modified_wheel_reported_sideways_still_does_its_action() {
+    let mut d = Driver::tall();
+    d.exec("prefs.set", json!({"key": "navigation.shiftScrolling", "value": "vertical"}));
+    d.wheel(0.2, 40.0, 0.0, json!({"shift": true}));
+    let (t, pps, v, a) = d.view();
+    assert!(v > 0.0, "Shift + a sideways wheel set to Vertical scrolls the video tracks: {v}");
+    assert_eq!((t, pps, a), (4.0, 50.0, 0.0), "and nothing else");
+    d.exec("prefs.set", json!({"key": "navigation.shiftScrolling", "value": "zoom"}));
+    d.wheel(0.2, 40.0, 0.0, json!({"shift": true}));
+    assert!(d.view().1 > 50.0, "set to Zoom it zooms");
+}
