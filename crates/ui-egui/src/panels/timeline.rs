@@ -2410,6 +2410,9 @@ fn ruler_inout_anchor(app: &mut FilmcraftApp, seq: &Sequence, layout: &Layout, p
     (cur, cur)
 }
 
+/// The Timeline's pointer and wheel input over the ruler and the tracks: what a press grabs, the
+/// wheel (scroll, zoom), and the drags that follow (scrub, move, trim, pan, box selection…), each
+/// committed as a command when the button comes up.
 fn interact(app: &mut FilmcraftApp, ui: &mut egui::Ui, seq: &Sequence, layout: &Layout, rect: Rect) {
     let ctx = ui.ctx().clone();
     let area = Rect::from_min_max(pos2(layout.content.min.x, layout.ruler.min.y), layout.content.max);
