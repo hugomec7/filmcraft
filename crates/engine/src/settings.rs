@@ -782,8 +782,8 @@ fn duration_in(value: f64, unit: &str, rate: FrameRate) -> Tick {
     d.max(rate.frame_duration())
 }
 
-/// Settings ▸ Navigation: what the mouse does on the Timeline (with Alt, Shift or Ctrl; the bare
-/// wheel is Settings ▸ Timeline ▸ Timeline Mouse Scrolling), around the playhead and time ruler, and
+/// Settings ▸ Navigation: what the mouse does on the Timeline (the bare wheel, and with Alt, Shift or
+/// Ctrl), around the playhead and time ruler, and
 /// over the time rulers of the Program and Source Monitors and Effect Controls.
 ///
 /// Two wheel gestures are fixed, as in Premiere: Alt + wheel over a track header resizes that track,
@@ -1225,7 +1225,7 @@ const CACHE_MGMT: &[(&str, &str)] = &[
 ];
 const AUTO_SCROLL: &[(&str, &str)] = &[("noScroll", "No Scroll"), ("pageScroll", "Page Scroll"), ("smoothScroll", "Smooth Scroll")];
 /// What a mouse wheel gesture does on the sequence Timeline, bare or with Alt, Shift or Ctrl. (Resizing
-/// tracks is not an option: see [`TimelinePrefs::wheel_action`].)
+/// tracks is not an option: see [`NavigationPrefs::wheel_action`].)
 pub const MOUSE_SCROLL: &[(&str, &str)] =
     &[("vertical", "Vertical"), ("horizontal", "Horizontal"), ("zoom", "Zoom"), ("step", "Step Playhead (Frames)"), ("off", "Disabled")];
 const ZOOM_ANCHOR: &[(&str, &str)] = &[("cursor", "Cursor Position"), ("playhead", "Playhead Position")];
@@ -1617,56 +1617,56 @@ static CATEGORIES: &[Category] = &[
                 "Timeline Mouse Wheel",
                 &[
                     f("navigation.mouseScrolling", "Timeline Mouse Scrolling", Kind::Choice(MOUSE_SCROLL), true),
-                    f("navigation.altScrolling", "Alt + Scroll", Kind::Choice(MOUSE_SCROLL), true),
-                    f("navigation.shiftScrolling", "Shift + Scroll", Kind::Choice(MOUSE_SCROLL), true),
-                    f("navigation.ctrlScrolling", "Ctrl + Scroll", Kind::Choice(MOUSE_SCROLL), true),
-                    f("navigation.zoomAnchor", "Zoom Anchor Point", Kind::Choice(ZOOM_ANCHOR), true),
+                    f("navigation.altScrolling", "Alt + Scroll", Kind::Choice(MOUSE_SCROLL), false),
+                    f("navigation.shiftScrolling", "Shift + Scroll", Kind::Choice(MOUSE_SCROLL), false),
+                    f("navigation.ctrlScrolling", "Ctrl + Scroll", Kind::Choice(MOUSE_SCROLL), false),
+                    f("navigation.zoomAnchor", "Zoom Anchor Point", Kind::Choice(ZOOM_ANCHOR), false),
                 ],
             ),
             Row::Group(
                 "Timeline Clicks and Drags",
                 &[
-                    f("navigation.clickToMovePlayhead", "Move Playhead on Timeline Click", Kind::Choice(CLICK_PLAYHEAD), true),
-                    f("navigation.dragPlayheadLine", "Drag Playhead Line Across Tracks", Kind::Choice(DRAG_PLAYHEAD_LINE), true),
-                    b("navigation.rulerDragInOut", "Split Time Ruler: Drag Upper Half to Set In/Out Range", true),
-                    b("navigation.middleButtonPan", "Pan Timeline by Dragging With Middle Mouse Button", true),
+                    f("navigation.clickToMovePlayhead", "Move Playhead on Timeline Click", Kind::Choice(CLICK_PLAYHEAD), false),
+                    f("navigation.dragPlayheadLine", "Drag Playhead Line Across Tracks", Kind::Choice(DRAG_PLAYHEAD_LINE), false),
+                    b("navigation.rulerDragInOut", "Split Time Ruler: Drag Upper Half to Set In/Out Range", false),
+                    b("navigation.middleButtonPan", "Pan Timeline by Dragging With Middle Mouse Button", false),
                 ],
             ),
             Row::Table {
                 title: "Program Monitor Mouse Wheel",
                 columns: &["Over the Preview", "Over the Time Ruler"],
                 rows: &[
-                    f("navigation.programPreviewWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programPreviewAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programPreviewShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programPreviewCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.programCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.programPreviewWheel", "Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programWheel", "Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programPreviewAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programPreviewShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programPreviewCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.programCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), false),
                 ],
             },
             Row::Table {
                 title: "Source Monitor Mouse Wheel",
                 columns: &["Over the Preview", "Over the Time Ruler"],
                 rows: &[
-                    f("navigation.sourcePreviewWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourceWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourcePreviewAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourceAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourcePreviewShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourceShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourcePreviewCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.sourceCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.sourcePreviewWheel", "Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourceWheel", "Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourcePreviewAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourceAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourcePreviewShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourceShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourcePreviewCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.sourceCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), false),
                 ],
             },
             Row::Group(
                 "Effect Controls Mouse Wheel",
                 &[
-                    f("navigation.effectControlsWheel", "Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.effectControlsAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.effectControlsShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), true),
-                    f("navigation.effectControlsCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), true),
+                    f("navigation.effectControlsWheel", "Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.effectControlsAltWheel", "Alt + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.effectControlsShiftWheel", "Shift + Scroll", Kind::Choice(PANEL_WHEEL), false),
+                    f("navigation.effectControlsCtrlWheel", "Ctrl + Scroll", Kind::Choice(PANEL_WHEEL), false),
                 ],
             ),
         ],
