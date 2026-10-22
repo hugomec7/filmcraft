@@ -416,7 +416,9 @@ pub fn zoom_pan_input(app: &mut FilmcraftApp, ui: &mut egui::Ui, w: Which, area:
     if d != Vec2::ZERO && d.is_finite() {
         // a fitted picture is panned at the size it is shown at
         if view(app, w).zoom.is_none() && pic.width() > 0.0 && fw > 0.0 {
-            let fitted = (pic.width() * ppp / fw).clamp(ZOOMS[0].1, ZOOMS[ZOOMS.len() - 1].1);
+            // keep the size it is shown at, even below the menu's smallest level (a UHD picture in a
+            // small monitor): raising it would make the picture jump as the drag starts
+            let fitted = (pic.width() * ppp / fw).min(ZOOMS[ZOOMS.len() - 1].1);
             let v = view_mut(app, w);
             v.zoom = Some(fitted);
             v.pan = [0.0, 0.0];
