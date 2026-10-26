@@ -297,7 +297,20 @@ pub fn section_header(ui: &mut Ui, id: egui::Id, title: &str, open: bool, t: &To
 
 /// A small pill toggle button with text (e.g. "M", "S" on track headers).
 pub fn letter_toggle(ui: &mut Ui, rect: Rect, letter: &str, on: bool, on_color: Color32, t: &Tokens, id: egui::Id) -> Response {
-    let resp = ui.interact(rect, id, Sense::click());
+    letter_toggle_clipped(ui, rect, ui.clip_rect(), letter, on, on_color, t, id)
+}
+
+/// [`letter_toggle`] shown only where `rect` meets `clip`, such as a Timeline track header scrolled
+/// partly out of its half: the button keeps its size and is cut off at the edge, takes clicks only
+/// where it shows, and draws nothing once it is scrolled out entirely.
+#[allow(clippy::too_many_arguments)]
+pub fn letter_toggle_clipped(ui: &mut Ui, rect: Rect, clip: Rect, letter: &str, on: bool, on_color: Color32, t: &Tokens, id: egui::Id) -> Response {
+    let visible = rect.intersect(clip);
+    let resp = ui.interact(if visible.is_positive() { visible } else { Rect::NOTHING }, id, Sense::click());
+    if !visible.is_positive() {
+        return resp;
+    }
+    let p = ui.painter().with_clip_rect(visible.intersect(ui.clip_rect()));
     let bg = if on {
         on_color
     } else if resp.hovered() {
@@ -305,18 +318,18 @@ pub fn letter_toggle(ui: &mut Ui, rect: Rect, letter: &str, on: bool, on_color: 
     } else {
         Color32::TRANSPARENT
     };
-    ui.painter().rect_filled(rect, 2.0, bg);
+    p.rect_filled(rect, 2.0, bg);
     if !on {
-        ui.painter().rect_stroke(rect, 2.0, Stroke::new(1.0, t.separator), StrokeKind::Inside);
+        p.rect_stroke(rect, 2.0, Stroke::new(1.0, t.separator), StrokeKind::Inside);
     }
-    ui.painter().text(rect.center(), Align2::CENTER_CENTER, letter, Tokens::semibold(10.5), if on { Color32::BLACK } else { t.text_dim });
+    p.text(rect.center(), Align2::CENTER_CENTER, letter, Tokens::semibold(10.5), if on { Color32::BLACK } else { t.text_dim });
     resp
 }
 
 /// A flat icon toggle inside a rect.
 pub fn icon_toggle(ui: &mut Ui, rect: Rect, icon: Icon, on: bool, t: &Tokens, id: egui::Id, on_color: Option<Color32>) -> Response {
     let resp = ui.interact(rect, id, Sense::click());
-    if resp.hovered() {
+    if resp.hovered() && rect.is_positive() {
         ui.painter().rect_filled(rect, 2.0, t.hover);
     }
     let col = if on { on_color.unwrap_or(t.icon) } else { t.text_faint };
@@ -353,8 +366,30 @@ pub fn dropdown_text(ui: &mut Ui, rect: Rect, text: &str, t: &Tokens, id: egui::
         Stroke::new(1.0, if resp.hovered() { Color32::from_rgb(0x4b, 0x4b, 0x4b) } else { t.field_border }),
         StrokeKind::Inside,
     );
-    ui.painter().text(pos2(rect.min.x + 9.0, rect.center().y), Align2::LEFT_CENTER, text, Tokens::ui(12.0), t.text);
+    // a long text is cut before the chevron instead of running out of the box
+    let text_clip = Rect::from_min_max(rect.min, pos2(rect.max.x - 20.0, rect.max.y));
+    ui.painter().with_clip_rect(text_clip).text(pos2(rect.min.x + 9.0, rect.center().y), Align2::LEFT_CENTER, text, Tokens::ui(12.0), t.text);
     icons::paint(ui.painter(), Rect::from_center_size(pos2(rect.max.x - 11.0, rect.center().y), vec2(9.0, 9.0)), Icon::ChevronDown, t.text_dim);
+    resp
+}
+
+/// The small "Timeline Mouse Wheel Behavior" button of the monitors, Effect Controls and Timeline:
+/// always the mouse icon, filled while the wheel is set to something other than the default.
+pub fn wheel_mode_button(ui: &mut Ui, rect: Rect, active: bool, t: &Tokens, id: egui::Id) -> Response {
+    let resp = ui.interact(rect, id, Sense::click());
+    if active {
+        ui.painter().rect_filled(rect, 4.0, t.pressed);
+    } else if resp.hovered() {
+        ui.painter().rect_filled(rect, 4.0, t.hover);
+    }
+    let color = if active {
+        t.accent
+    } else if resp.hovered() {
+        t.tab_text_active
+    } else {
+        t.icon
+    };
+    icons::paint(ui.painter(), rect.shrink(4.0), Icon::Mouse, color);
     resp
 }
 
@@ -456,6 +491,31 @@ mod tests {
         harness.check_accessibility();
         assert!(harness.query_by_label("Position X").is_some(), "the field is reachable by its parameter label");
         assert!(harness.query_by_label("Value").is_none(), "the generic label is gone");
+    }
+
+    /// A Timeline track's Mute and Solo buttons drew their letter outside the header once its track
+    /// was scrolled out of the audio half, over the video tracks: what a clipped letter toggle
+    /// draws stays inside the clip, and nothing is drawn once it is out entirely.
+    #[test]
+    fn a_clipped_letter_toggle_draws_only_inside_its_clip() {
+        let t = Tokens::for_kind(ThemeKind::Dark);
+        let ctx = egui::Context::default();
+        crate::theme::install(&ctx, &t); // the letters' semibold font
+        let clip = Rect::from_min_max(pos2(0.0, 100.0), pos2(200.0, 300.0));
+        for (y, shows) in [(80.0, false), (95.0, true), (150.0, true), (295.0, true), (310.0, false)] {
+            for _ in 0..2 {
+                let mut out = ctx.run_ui(egui::RawInput::default(), |ui| {
+                    let r = Rect::from_min_size(pos2(20.0, y), vec2(14.0, 14.0));
+                    letter_toggle_clipped(ui, r, clip, "M", false, Color32::WHITE, &t, egui::Id::unique("m"));
+                    letter_toggle_clipped(ui, r.translate(vec2(20.0, 0.0)), clip, "S", true, Color32::YELLOW, &t, egui::Id::unique("s"));
+                });
+                out.textures_delta.clear();
+                assert_eq!(!out.shapes.is_empty(), shows, "button at y {y}");
+                for s in &out.shapes {
+                    assert!(clip.contains_rect(s.clip_rect), "button at y {y} draws outside its clip: {:?}", s.clip_rect);
+                }
+            }
+        }
     }
 
     #[test]
